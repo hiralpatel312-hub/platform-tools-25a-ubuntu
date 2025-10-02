@@ -48,12 +48,14 @@ jobs:
       - name: Create EKS Cluster with CloudFormation
         run: |
           SSO_ADMIN_ROLE=$(aws iam list-roles --query "Roles[?starts_with(RoleName, 'AWSReservedSSO_Administrator')].RoleName" --output text)
+          echo "Using SSO Admin Role: $SSO_ADMIN_ROLE_ARN"
           make cluster name=temporary-eks-cluster-${{ github.event.inputs.environment_stage }} version=1.29 role=$SSO_ADMIN_ROLE
         working-directory: ./eks-cloudformation
 
       # Login to EKS
       - name: Login to EKS - update kubeconfig
         run: aws eks update-kubeconfig --name temporary-eks-cluster-${{ github.event.inputs.environment_stage }} --region $AWS_REGION
+
 
       # Display aws-auth configmap
       - name: View the new IAM to Kubernetes RBAC mapping
