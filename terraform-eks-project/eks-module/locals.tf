@@ -1,0 +1,23 @@
+locals {
+  clustername     = "${var.project_name}-cluster-${var.environment}"
+  rolename        = "${var.project_name}-cluster-role-${var.environment}"
+  node_group_name = "${var.project_name}-cluster-worker-nodes-${var.environment}"
+  node_group_role = "${var.project_name}-cluster-workers-role-${var.environment}"
+
+  root_account    = "383585068161"
+  log_group       = "${var.project_name}-logs-${var.environment}"
+  db_name         = "${var.project_name}-db-${var.environment}"
+  cache_name      = "${var.project_name}-cache-${var.environment}"
+  queue_name      = "${var.project_name}-queue-${var.environment}"
+  topic_name      = "${var.project_name}-topic-${var.environment}"
+  subnet_name     = "${var.project_name}-subnet-${var.environment}"
+  vpc_name        = "${var.project_name}-vpc-${var.environment}"
+  security_group  = "${var.project_name}-sg-${var.environment}"
+  iam_user        = "${var.project_name}-user-${var.environment}"
+  iam_policy      = "${var.project_name}-policy-${var.environment}"
+  function_name   = "${var.project_name}-lambda-${var.environment}"
+  dashboard_name  = "${var.project_name}-dashboard-${var.environment}"
+  repository_name = "${var.project_name}-repo-${var.environment}"
+  service_name    = "${var.project_name}-service-${var.environment}"
+  rolebinding     = "${var.project_name}-rolebinding-${var.environment}"
+}
