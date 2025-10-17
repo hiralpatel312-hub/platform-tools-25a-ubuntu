@@ -53,5 +53,8 @@ resource "kubernetes_config_map" "aws_auth" {
     mapRoles = yamlencode(local.map_roles_extended)
   }
 
-  depends_on = [aws_autoscaling_group.nodes_asg]
+  depends_on = [
+    aws_eks_cluster.cluster,
+    aws_autoscaling_group.nodes_asg
+  ]
 }
