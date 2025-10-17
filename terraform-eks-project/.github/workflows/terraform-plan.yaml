@@ -1,39 +1,42 @@
-name: Terraform Deployment Workflow
+name: Terraform CI/CD
 
-# Controls when the workflow will run
 on:
   push:
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    branches:
+      - main
+      - 'feature/eks-cluster-setup'
+  pull_request:
+    branches:
+      - main
 
 permissions:
-  id-token: write   # This is required for OIDC based Role login
-  contents: read    # This is required for actions/checkout
+  id-token: write
+  contents: read
 
 jobs:
-  # This workflow contains a single job called "build"
-  tf-deploy:
-    # The type of runner that the job will run on
-    environment: dev 
-    runs-on: ubuntu-22.04
+  terraform:
+    runs-on: ubuntu-latest
+    environment: dev
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          aws-region: us-east-1
-          role-to-assume: ${{ vars.IAM_ROLE_EKS }}
-          role-session-name: login-session-by-github-actions
+          role-to-assume: arn:aws:iam::383585068161:role/GitHubActionsTerraformRole
+          aws-region: ${{ vars.AWS_REGION }}
 
-      # - uses: hashicorp/setup-terraform@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
 
-      - name: Run a multi-line script
-        working-directory: root-module/
-        run: |
-         terraform init -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
-          terraform plan -input=false -var-file=${{ vars.ENVIRONMENT_STAGE }}.tfvars 
-          terraform apply -auto-approve -input=false -var-file=${{ vars.ENVIRONMENT_STAGE }}.tfvars
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=dev.tfvars
+
+      - name: Terraform Apply (only on main push)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -var-file=dev.tfvars
