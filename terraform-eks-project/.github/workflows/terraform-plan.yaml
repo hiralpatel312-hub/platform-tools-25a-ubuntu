@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - 'feature/eks-cluster-setup'
+      - 'feature/**'
   pull_request:
     branches:
       - main
