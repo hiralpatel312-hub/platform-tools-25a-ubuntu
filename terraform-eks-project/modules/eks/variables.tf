@@ -31,9 +31,20 @@ variable "min_size" {
 variable "max_size" { 
     type = number 
 }
-variable "admin_role_arn" { 
-    type = string 
+variable "admin_role_arn" {
+  description = "AWS SSO Administrator role ARN for cluster admin access"
+  type        = string
+  default     = ""
 }
-variable "github_runner_role_arn" { 
-    type = string 
+
+variable "github_runner_role_arn" {
+  description = "GitHub Actions application CI/CD IAM role ARN"
+  type        = string
+  default     = ""
+}
+
+variable "github_tf_role_arn" {
+  description = "GitHub Actions Terraform IAM role ARN"
+  type        = string
+  default     = ""
 }

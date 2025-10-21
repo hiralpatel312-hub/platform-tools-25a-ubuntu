@@ -1,7 +1,7 @@
 # Get latest EKS-optimized AMI for the region (owner id may vary by region; this is common)
 data "aws_ami" "eks_worker" {
   most_recent = true
-  owners      = ["602401143452"] # Amazon EKS AMI owner ID (verify for your region)
+  owners      = ["602401143452"] # Amazon EKS AMI owner ID 
   filter {
     name   = "name"
     values = ["amazon-eks-node-*"]
@@ -56,7 +56,6 @@ resource "aws_autoscaling_group" "nodes_asg" {
     spot_allocation_strategy                 = "lowest-price"
   }
 }
-
   tag {
     key                 = "kubernetes.io/cluster/${var.project_name}-${var.environment}-cluster"
     value               = "owned"
