@@ -3,74 +3,70 @@ name: Terraform EKS Deployment
 on:
   push:
     branches:
-      - feature/**
-  workflow_dispatch:
-
-env:
-  AWS_REGION: us-east-1
-  ENVIRONMENT_STAGE: dev
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  terraform:
+  deploy-platform-tools:
     runs-on: ubuntu-latest
+    environment: dev
+
+    env:
+      AWS_REGION: us-east-1
+      ENVIRONMENT_STAGE: dev
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::383585068161:role/GitHubActionsTerraformIAMrole
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.9.7
 
-      # 👇 Terraform commands now run in your root directory
+      # 🟢 Run Terraform from correct directory
       - name: Terraform Init
+        working-directory: terraform-eks-project
         run: terraform init
 
-      - name: Terraform Validate
-        run: terraform validate
-
       - name: Terraform Plan
+        working-directory: terraform-eks-project
         run: terraform plan -var-file=dev.tfvars
 
-      - name: Terraform Apply
+      - name: Terraform Apply (on feature branch)
         if: startsWith(github.ref, 'refs/heads/feature/')
+        working-directory: terraform-eks-project
         run: terraform apply -auto-approve -var-file=dev.tfvars
 
-      # 👇 Configure kubectl once EKS is ready
+      - name: Terraform Apply (on main branch)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: terraform-eks-project
+        run: terraform apply -auto-approve -var-file=dev.tfvars
+
+      # 🟣 Optional: Post-deploy steps
       - name: Configure kubectl for EKS
         run: |
-          aws eks update-kubeconfig \
-            --name temporary-eks-cluster-${{ env.ENVIRONMENT_STAGE }} \
-            --region ${{ env.AWS_REGION }}
+          aws eks update-kubeconfig --name temporary-eks-cluster-${ENVIRONMENT_STAGE} --region $AWS_REGION
 
       - name: Deploy Ingress Controller
-        run: |
-          echo "Deploying ingress controller..."
-          kubectl apply -f ingress-nginx/deploy.yaml || echo "Ingress deploy skipped"
-        continue-on-error: true
+        run: kubectl apply -f ingress-nginx/deploy.yaml
 
       - name: Deploy Cluster Autoscaler
-        run: |
-          echo "Deploying Cluster Autoscaler..."
-          # kubectl apply -f k8s/cluster-autoscaler.yaml
-        continue-on-error: true
+        run: echo "Deploy Cluster Autoscaler steps go here"
 
-      - name: Enable EKS Logging
-        run: |
-          echo "Setting up EKS logging..."
-          # Add your logging setup here if needed
-        continue-on-error: true
+      - name: Deploy EKS Logging
+        run: echo "Deploy EKS Logging steps go here"
 
-      - name: Final Steps
-        run: echo "✅ Terraform EKS deployment complete!"
+      - name: Final deployment steps and cleanup
+        run: echo "Final deployment steps and cleanup"
