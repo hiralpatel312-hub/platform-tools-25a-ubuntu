@@ -3,8 +3,8 @@ name: Terraform EKS Deployment
 on:
   push:
     branches:
-      - feature/**  # runs only on feature branches
-  workflow_dispatch:  # allow manual trigger
+      - feature/**
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1
@@ -25,7 +25,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::383585068161:role/GitHubActionsRole
+          role-to-assume: arn:aws:iam::383585068161:role/GitHubActionsTerraformIAMrole
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
@@ -33,53 +33,44 @@ jobs:
         with:
           terraform_version: 1.9.7
 
-      # Initialize Terraform
+      # 👇 Terraform commands now run in your root directory
       - name: Terraform Init
         run: terraform init
-        working-directory: ./root-module
 
-      # Validate Terraform
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ./root-module
 
-      # Terraform Plan
       - name: Terraform Plan
         run: terraform plan -var-file=dev.tfvars
-        working-directory: ./root-module
 
-      # Apply Terraform automatically on feature branches
       - name: Terraform Apply
         if: startsWith(github.ref, 'refs/heads/feature/')
         run: terraform apply -auto-approve -var-file=dev.tfvars
-        working-directory: ./root-module
 
-      # Update kubeconfig for EKS cluster
-      - name: Configure kubectl
+      # 👇 Configure kubectl once EKS is ready
+      - name: Configure kubectl for EKS
         run: |
           aws eks update-kubeconfig \
             --name temporary-eks-cluster-${{ env.ENVIRONMENT_STAGE }} \
             --region ${{ env.AWS_REGION }}
 
-      # Deploy Ingress NGINX (optional if already exists)
       - name: Deploy Ingress Controller
         run: |
+          echo "Deploying ingress controller..."
           kubectl apply -f ingress-nginx/deploy.yaml || echo "Ingress deploy skipped"
         continue-on-error: true
 
-      # Deploy Cluster Autoscaler
       - name: Deploy Cluster Autoscaler
         run: |
           echo "Deploying Cluster Autoscaler..."
           # kubectl apply -f k8s/cluster-autoscaler.yaml
         continue-on-error: true
 
-      # Deploy EKS Logging (CloudWatch)
       - name: Enable EKS Logging
         run: |
           echo "Setting up EKS logging..."
-          # Add kubectl logs or CloudWatch configuration steps here
+          # Add your logging setup here if needed
         continue-on-error: true
 
       - name: Final Steps
-        run: echo "EKS cluster and add-ons deployed successfully!"
+        run: echo "✅ Terraform EKS deployment complete!"
