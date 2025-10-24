@@ -1,4 +1,4 @@
-name: Deploy Platform Tools (Terraform + EKS)
+name: Terraform + EKS Deployment
 
 on:
   push:
@@ -14,18 +14,18 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: Terraform and EKS Deployment
+  terraform-deploy:
+    name: Terraform Infrastructure & EKS Setup
     runs-on: ubuntu-latest
     environment: dev
 
     steps:
       # 1️⃣ Checkout source code
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Configure AWS credentials (OIDC)
-      - name: Configure AWS Credentials
+      # 2️⃣ Configure AWS OIDC credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
@@ -42,37 +42,36 @@ jobs:
         run: terraform init
 
       # 5️⃣ Terraform Plan
-        # This shows what Terraform would create/update/destroy
       - name: Terraform Plan
         run: terraform plan -var-file=dev.tfvars
 
-      # 6️⃣ Terraform Apply (only on feature branches)
+      # 6️⃣ Terraform Apply — only on feature branches
       - name: Terraform Apply (on feature branch)
         if: startsWith(github.ref, 'refs/heads/feature/')
         run: terraform apply -auto-approve -var-file=dev.tfvars
 
-      # 7️⃣ Configure kubectl for EKS
+      # 7️⃣ Configure kubectl to talk to EKS
       - name: Update kubeconfig for EKS
         run: |
           aws eks update-kubeconfig \
             --name temporary-eks-cluster-${{ vars.ENVIRONMENT_STAGE }} \
             --region ${{ vars.AWS_REGION }}
 
-      # 8️⃣ Deploy Ingress NGINX
+      # 8️⃣ Deploy Ingress Controller
       - name: Deploy Ingress Controller
         run: kubectl apply -f ingress-nginx/deploy.yaml
 
       # 9️⃣ Deploy Cluster Autoscaler (placeholder)
       - name: Deploy Cluster Autoscaler
-        run: echo "Cluster Autoscaler deployment steps go here"
+        run: echo "Cluster Autoscaler steps go here"
 
       # 🔟 Enable EKS Logging (placeholder)
       - name: Enable EKS Logging
         run: echo "EKS logging setup steps go here"
 
-      # 11️⃣ Final Cleanup Step
-      - name: Final Deployment Cleanup
-        run: echo "Final deployment steps and cleanup complete ✅"
+      # 11️⃣ Final Cleanup
+      - name: Final deployment cleanup
+        run: echo "Final deployment steps complete ✅"
 
 
 
