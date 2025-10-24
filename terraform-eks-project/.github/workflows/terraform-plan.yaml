@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  terraform:
+  deploy:
     runs-on: ubuntu-latest
     environment: dev
 
@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
@@ -37,7 +37,20 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -var-file=dev.tfvars
 
-      - name: Terraform Apply (for all branches)
-        if: github.event_name == 'push'
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/')
         run: terraform apply -auto-approve -var-file=dev.tfvars
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name my-eks-cluster-dev --region ${{ vars.AWS_REGION }}
+
+      - name: Deploy Ingress NGINX
+        run: kubectl apply -f ingress-nginx/deploy.yaml
+
+      - name: Deploy Cluster Autoscaler
+        run: kubectl apply -f cluster-autoscaler/deploy.yaml
+
+      - name: Deploy Logging Addon
+        run: kubectl apply -f logging/deploy.yaml
+
 
