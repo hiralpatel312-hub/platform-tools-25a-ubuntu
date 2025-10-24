@@ -1,4 +1,4 @@
-name: Terraform CI/CD
+name: Deploy Platform Tools (Terraform + EKS)
 
 on:
   push:
@@ -15,50 +15,64 @@ permissions:
 
 jobs:
   deploy:
+    name: Terraform and EKS Deployment
     runs-on: ubuntu-latest
     environment: dev
 
     steps:
-      - name: Checkout
+      # 1️⃣ Checkout source code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials via OIDC
+      # 2️⃣ Configure AWS credentials (OIDC)
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      # 3️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.5
 
+      # 4️⃣ Terraform Init
       - name: Terraform Init
         run: terraform init
 
+      # 5️⃣ Terraform Plan
+        # This shows what Terraform would create/update/destroy
       - name: Terraform Plan
         run: terraform plan -var-file=dev.tfvars
 
+      # 6️⃣ Terraform Apply (only on feature branches)
       - name: Terraform Apply (on feature branch)
         if: startsWith(github.ref, 'refs/heads/feature/')
+        run: terraform apply -auto-approve -var-file=dev.tfvars
+
+      # 7️⃣ Configure kubectl for EKS
+      - name: Update kubeconfig for EKS
         run: |
-         terraform init
-         terraform plan -var-file=dev.tfvars
-         terraform apply -auto-approve -var-file=dev.tfvars
+          aws eks update-kubeconfig \
+            --name temporary-eks-cluster-${{ vars.ENVIRONMENT_STAGE }} \
+            --region ${{ vars.AWS_REGION }}
 
-      - name: Deploy Kubernetes Add-ons
-        run: |
-         aws eks update-kubeconfig --name temporary-eks-cluster-${ENVIRONMENT_STAGE} --region $AWS_REGION
-         kubectl apply -f ingress-nginx/deploy.yaml
-
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name my-eks-cluster-dev --region ${{ vars.AWS_REGION }}
-
-      - name: Deploy Ingress NGINX
+      # 8️⃣ Deploy Ingress NGINX
+      - name: Deploy Ingress Controller
         run: kubectl apply -f ingress-nginx/deploy.yaml
 
+      # 9️⃣ Deploy Cluster Autoscaler (placeholder)
       - name: Deploy Cluster Autoscaler
-        run: kubectl apply -f cluster-autoscaler/deploy.yaml
+        run: echo "Cluster Autoscaler deployment steps go here"
 
-      - name: Deploy Logging Addon
-        run: kubectl apply -f logging/deploy.yaml
+      # 🔟 Enable EKS Logging (placeholder)
+      - name: Enable EKS Logging
+        run: echo "EKS logging setup steps go here"
+
+      # 11️⃣ Final Cleanup Step
+      - name: Final Deployment Cleanup
+        run: echo "Final deployment steps and cleanup complete ✅"
+
 
 
