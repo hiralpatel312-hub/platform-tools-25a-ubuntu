@@ -1,27 +1,3 @@
-variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
-  type        = string
-}
-
-variable "project_name" {
-  description = "Project name"
-  type        = string
-}
-
-variable "environment" {
-  description = "Environment name (dev/staging/prod)"
-  type        = string
-}
-
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
 # Availability Zones
 data "aws_availability_zones" "available" {
   state = "available"

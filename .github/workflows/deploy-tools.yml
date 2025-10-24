@@ -49,9 +49,5 @@ jobs:
         working-directory: terraform-eks-project
         run: terraform apply -auto-approve -var-file=dev.tfvars
 
-      - name: Terraform Apply (on main branch)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        working-directory: terraform-eks-project
-        run: terraform apply -auto-approve -var-file=dev.tfvars
 
       
