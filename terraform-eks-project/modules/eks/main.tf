@@ -12,7 +12,7 @@ resource "aws_eks_cluster" "cluster" {
   depends_on = [aws_iam_role_policy_attachment.cluster_policy]
 }
 
-# Managed addons (if supported for your chosen k8s version)
+# Managed addons 
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name      = aws_eks_cluster.cluster.name
   addon_name        = "vpc-cni"
@@ -24,4 +24,17 @@ resource "aws_eks_addon" "vpc_cni" {
 resource "aws_eks_addon" "ebs_csi" {
   cluster_name = aws_eks_cluster.cluster.name
   addon_name   = "aws-ebs-csi-driver"
+}
+resource "aws_eks_addon" "coredns" {
+  cluster_name = aws_eks_cluster.cluster.name
+  addon_name   = "coredns"
+
+  depends_on = [aws_eks_cluster.cluster]
+}
+
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name = aws_eks_cluster.cluster.name
+  addon_name   = "kube-proxy"
+
+  depends_on = [aws_eks_cluster.cluster]
 }

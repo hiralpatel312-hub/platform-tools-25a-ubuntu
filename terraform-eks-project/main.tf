@@ -24,7 +24,4 @@ module "eks" {
   desired_capacity       = var.desired_capacity
   min_size               = var.min_size
   max_size               = var.max_size
-  sso_admin_role_arn             = var.sso_admin_role_arn
-  github_runner_ci_role_arn      = var.github_runner_ci_role_arn
-  github_runner_terraform_role_arn = var.github_runner_terraform_role_arn
 }
