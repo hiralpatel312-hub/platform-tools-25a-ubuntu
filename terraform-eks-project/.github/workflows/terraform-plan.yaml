@@ -39,7 +39,15 @@ jobs:
 
       - name: Terraform Apply (on feature branch)
         if: startsWith(github.ref, 'refs/heads/feature/')
-        run: terraform apply -auto-approve -var-file=dev.tfvars
+        run: |
+         terraform init
+         terraform plan -var-file=dev.tfvars
+         terraform apply -auto-approve -var-file=dev.tfvars
+
+      - name: Deploy Kubernetes Add-ons
+        run: |
+         aws eks update-kubeconfig --name temporary-eks-cluster-${ENVIRONMENT_STAGE} --region $AWS_REGION
+         kubectl apply -f ingress-nginx/deploy.yaml
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name my-eks-cluster-dev --region ${{ vars.AWS_REGION }}
