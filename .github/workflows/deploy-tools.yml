@@ -29,8 +29,8 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
+         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+         aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -54,19 +54,4 @@ jobs:
         working-directory: terraform-eks-project
         run: terraform apply -auto-approve -var-file=dev.tfvars
 
-      # 🟣 Optional: Post-deploy steps
-      - name: Configure kubectl for EKS
-        run: |
-          aws eks update-kubeconfig --name temporary-eks-cluster-${ENVIRONMENT_STAGE} --region $AWS_REGION
-
-      - name: Deploy Ingress Controller
-        run: kubectl apply -f ingress-nginx/deploy.yaml
-
-      - name: Deploy Cluster Autoscaler
-        run: echo "Deploy Cluster Autoscaler steps go here"
-
-      - name: Deploy EKS Logging
-        run: echo "Deploy EKS Logging steps go here"
-
-      - name: Final deployment steps and cleanup
-        run: echo "Final deployment steps and cleanup"
+      
