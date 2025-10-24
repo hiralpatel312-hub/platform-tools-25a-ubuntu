@@ -37,8 +37,8 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -var-file=dev.tfvars
 
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/')
+      - name: Terraform Apply (on feature branch)
+        if: startsWith(github.ref, 'refs/heads/feature/')
         run: terraform apply -auto-approve -var-file=dev.tfvars
 
       - name: Update kubeconfig
