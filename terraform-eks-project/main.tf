@@ -6,6 +6,8 @@ module "vpc" {
   source       = "./modules/vpc"
   project_name = var.project_name
   environment  = var.environment
+  aws_region   = var.aws_region
+  vpc_cidr     = var.vpc_cidr
   cidr_block   = var.vpc_cidr
   region       = var.aws_region
   azs          = slice(data.aws_availability_zones.azs.names, 0, 3)
