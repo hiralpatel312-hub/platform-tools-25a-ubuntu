@@ -43,6 +43,14 @@ resource "aws_iam_role_policy_attachment" "worker_ecr_readonly" {
   role       = aws_iam_role.node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
+# OIDC provider
+resource "aws_iam_openid_connect_provider" "eks" {
+  url             = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.oidc_cert.certificates[0].sha1_fingerprint]
+}
+
+# EBS CSI IAM Role
 resource "aws_iam_role" "ebs_csi" {
   name = "${var.project_name}-${var.environment}-ebs-csi-role"
 
@@ -63,7 +71,3 @@ resource "aws_iam_role" "ebs_csi" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "ebs_csi_policy" {
-  role       = aws_iam_role.ebs_csi.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-}
