@@ -35,6 +35,9 @@ resource "aws_eks_addon" "ebs_csi" {
   addon_name               = "aws-ebs-csi-driver"
   service_account_role_arn = aws_iam_role.ebs_csi.arn
 
+lifecycle {
+    prevent_destroy = true
+  }
   depends_on = [
     aws_eks_cluster.cluster,
     aws_iam_openid_connect_provider.eks,
