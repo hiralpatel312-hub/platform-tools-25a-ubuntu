@@ -1,11 +1,15 @@
-# EKS control plane role
+#########################################################
+# IAM Roles & Policies
+#########################################################
+
+# Cluster role
 resource "aws_iam_role" "cluster_role" {
   name = "${var.project_name}-${var.environment}-eks-cluster-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = ["sts:AssumeRole"]
-      Effect = "Allow"
+      Action   = ["sts:AssumeRole"]
+      Effect   = "Allow"
       Principal = { Service = "eks.amazonaws.com" }
     }]
   })
@@ -16,14 +20,14 @@ resource "aws_iam_role_policy_attachment" "cluster_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-# Node IAM role (attached to instances)
+# Node role
 resource "aws_iam_role" "node_role" {
   name = "${var.project_name}-${var.environment}-eks-node-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = ["sts:AssumeRole"]
-      Effect = "Allow"
+      Action   = ["sts:AssumeRole"]
+      Effect   = "Allow"
       Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
@@ -43,6 +47,7 @@ resource "aws_iam_role_policy_attachment" "worker_ecr_readonly" {
   role       = aws_iam_role.node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
+
 # OIDC provider
 data "tls_certificate" "oidc_cert" {
   url = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
@@ -54,10 +59,9 @@ resource "aws_iam_openid_connect_provider" "eks" {
   thumbprint_list = [data.tls_certificate.oidc_cert.certificates[0].sha1_fingerprint]
 }
 
-# EBS CSI IAM Role
+# EBS CSI Role
 resource "aws_iam_role" "ebs_csi" {
   name = "${var.project_name}-${var.environment}-ebs-csi-role"
-
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -73,5 +77,10 @@ resource "aws_iam_role" "ebs_csi" {
       }
     }]
   })
+}
+
+resource "aws_iam_role_policy_attachment" "ebs_csi_policy" {
+  role       = aws_iam_role.ebs_csi.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
 }
 

@@ -1,4 +1,3 @@
-
 #########################################
 # 1. AWS SSO Administrator Access
 #########################################
@@ -7,68 +6,56 @@ resource "aws_eks_access_entry" "sso_admin" {
   cluster_name  = aws_eks_cluster.cluster.name
   principal_arn = "arn:aws:iam::383585068161:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_Administrator_a72305569e9173dc"
   type          = "STANDARD"
-   depends_on = [aws_eks_cluster.cluster]
+
+  depends_on = [aws_eks_cluster.cluster]
 }
 
 resource "aws_eks_access_policy_association" "sso_admin_policy" {
   cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = "arn:aws:iam::383585068161:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_Administrator_a72305569e9173dc"
+  principal_arn = aws_eks_access_entry.sso_admin.principal_arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
     type = "cluster"
   }
+
+  depends_on = [aws_eks_cluster.cluster]
 }
 
 #########################################
-# 2. GitHub Actions CI/CD Role
+# 2. GitHub Actions Role (CI/CD + Terraform)
 #########################################
 
-resource "aws_eks_access_entry" "github_runner_ci" {
+resource "aws_eks_access_entry" "github_runner" {
   cluster_name  = aws_eks_cluster.cluster.name
   principal_arn = "arn:aws:iam::383585068161:role/GitHubActionsTerraformIAMrole"
   type          = "STANDARD"
+
+  depends_on = [aws_eks_cluster.cluster]
 }
 
-resource "aws_eks_access_policy_association" "github_runner_ci_policy" {
+resource "aws_eks_access_policy_association" "github_runner_policy" {
   cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = "arn:aws:iam::383585068161:role/GitHubActionsTerraformIAMrole"
+  principal_arn = aws_eks_access_entry.github_runner.principal_arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
     type = "cluster"
   }
-   depends_on = [aws_eks_cluster.cluster]
+
+  depends_on = [aws_eks_access_entry.github_runner]
 }
 
 #########################################
-# 3. GitHub Actions Terraform Role (can be same as CI/CD)
-#########################################
-
-resource "aws_eks_access_entry" "github_runner_terraform" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = "arn:aws:iam::383585068161:role/GitHubActionsTerraformIAMrole"
-  type          = "STANDARD"
-}
-
-resource "aws_eks_access_policy_association" "github_runner_terraform_policy" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = "arn:aws:iam::383585068161:role/GitHubActionsTerraformIAMrole"
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-
-  access_scope {
-    type = "cluster"
-  }
-}
-
-#########################################
-# 4. Node Group Role (Worker Nodes)
+# 3. Node Group Role (Worker Nodes)
 #########################################
 
 resource "aws_eks_access_entry" "node_role_entry" {
   cluster_name  = aws_eks_cluster.cluster.name
   principal_arn = aws_iam_role.node_role.arn
   type          = "EC2"
+
+  depends_on = [aws_eks_cluster.cluster]
 }
 
 resource "aws_eks_access_policy_association" "node_role_policy" {
@@ -79,10 +66,17 @@ resource "aws_eks_access_policy_association" "node_role_policy" {
   access_scope {
     type = "cluster"
   }
+
+  depends_on = [aws_eks_access_entry.node_role_entry]
 }
 
-# Attach EBS CSI policy
+#########################################
+# 4. EBS CSI Policy Attachment
+#########################################
+
 resource "aws_iam_role_policy_attachment" "ebs_csi_policy" {
   role       = aws_iam_role.ebs_csi.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+
+  depends_on = [aws_iam_role.ebs_csi]
 }

@@ -1,26 +1,15 @@
-
-#########################################################
-# Node Group IAM Instance Profile
-#########################################################
-
+# IAM Instance Profile
 resource "aws_iam_instance_profile" "node_profile" {
   name = "${var.project_name}-${var.environment}-node-profile"
   role = aws_iam_role.node_role.name
 }
 
-#########################################################
-# Get the latest EKS-optimized AMI
-# Ensures AMI architecture matches instance types
-#########################################################
-
+# Latest EKS-optimized AMI
 data "aws_ssm_parameter" "eks_ami" {
   name = "/aws/service/eks/optimized-ami/${var.k8s_version}/amazon-linux-2/recommended/image_id"
 }
 
-#########################################################
-# Launch Template for Node Group
-#########################################################
-
+# Launch template
 resource "aws_launch_template" "nodes_lt" {
   name_prefix   = "${var.project_name}-${var.environment}-lt-"
   image_id      = data.aws_ssm_parameter.eks_ami.value
@@ -41,10 +30,7 @@ resource "aws_launch_template" "nodes_lt" {
   }
 }
 
-#########################################################
-# Auto Scaling Group for Worker Nodes
-#########################################################
-
+# Auto Scaling Group
 resource "aws_autoscaling_group" "nodes_asg" {
   name                = "${var.project_name}-${var.environment}-nodes-asg"
   max_size            = var.max_size
