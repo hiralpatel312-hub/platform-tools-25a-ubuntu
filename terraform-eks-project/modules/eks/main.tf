@@ -33,6 +33,7 @@ resource "aws_eks_addon" "vpc_cni" {
 resource "aws_eks_addon" "ebs_csi" {
   cluster_name = aws_eks_cluster.cluster.name
   addon_name   = "aws-ebs-csi-driver"
+  service_account_role_arn = aws_iam_role.ebs_csi.arn
 
   #  EBS CSI needs IAM OIDC provider & policy attached
   depends_on = [
@@ -40,6 +41,24 @@ resource "aws_eks_addon" "ebs_csi" {
     aws_iam_openid_connect_provider.eks,
     aws_iam_role_policy_attachment.ebs_csi_policy
   ]
+}
+# Create IAM OIDC provider for the EKS cluster
+data "aws_eks_cluster" "cluster" {
+  name = aws_eks_cluster.cluster.name
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = aws_eks_cluster.cluster.name
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  url             = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.oidc_cert.certificates[0].sha1_fingerprint]
+}
+
+data "tls_certificate" "oidc_cert" {
+  url = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
 }
 
 resource "aws_eks_addon" "coredns" {
