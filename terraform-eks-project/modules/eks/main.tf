@@ -48,16 +48,3 @@ resource "aws_eks_addon" "coredns" {
 
   depends_on = [aws_eks_cluster.cluster]
 }
-data "aws_eks_cluster" "cluster" {
-  name = aws_eks_cluster.cluster.name
-}
-
-data "aws_eks_cluster_auth" "cluster" {
-  name = aws_eks_cluster.cluster.name
-}
-
-resource "aws_iam_openid_connect_provider" "eks" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer_thumbprint]
-  url             = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
-}
