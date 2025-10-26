@@ -44,6 +44,10 @@ resource "aws_iam_role_policy_attachment" "worker_ecr_readonly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 # OIDC provider
+data "tls_certificate" "oidc_cert" {
+  url = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
+}
+
 resource "aws_iam_openid_connect_provider" "eks" {
   url             = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
   client_id_list  = ["sts.amazonaws.com"]
