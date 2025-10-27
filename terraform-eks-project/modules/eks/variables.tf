@@ -17,7 +17,10 @@ variable "public_subnet_ids" {
   description = "Public subnet IDs for the cluster"
   type        = list(string)
 }
-
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs for the worker nodes"
+  type        = list(string)
+}
 variable "ec2_instance_types" {
   description = "List of EC2 instance types for worker nodes"
   type        = list(string)

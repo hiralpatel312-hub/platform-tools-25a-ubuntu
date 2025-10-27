@@ -1,15 +1,7 @@
-#########################################################
-# 1. IAM Instance Profile
-#########################################################
-
 resource "aws_iam_instance_profile" "node_profile" {
   name = "${var.project_name}-${var.environment}-node-profile"
   role = aws_iam_role.node_role.name
 }
-
-#########################################################
-# 2. Launch Template
-#########################################################
 
 data "aws_ssm_parameter" "eks_ami" {
   name = "/aws/service/eks/optimized-ami/${var.k8s_version}/amazon-linux-2/recommended/image_id"
@@ -35,16 +27,12 @@ resource "aws_launch_template" "nodes_lt" {
   }
 }
 
-#########################################################
-# 3. Auto Scaling Group
-#########################################################
-
 resource "aws_autoscaling_group" "nodes_asg" {
   name                = "${var.project_name}-${var.environment}-nodes-asg"
   max_size            = var.max_size
   min_size            = var.min_size
   desired_capacity    = var.desired_capacity
-  vpc_zone_identifier = var.public_subnet_ids
+  vpc_zone_identifier = var.private_subnet_ids
 
   mixed_instances_policy {
     launch_template {
