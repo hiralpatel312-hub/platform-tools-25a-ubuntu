@@ -1,5 +1,5 @@
 #########################################################
-# 1. AWS SSO Administrator Access
+# 1. AWS SSO Admin Access
 #########################################################
 
 resource "aws_eks_access_entry" "sso_admin" {
@@ -15,11 +15,8 @@ resource "aws_eks_access_policy_association" "sso_admin_policy" {
   principal_arn = aws_eks_access_entry.sso_admin.principal_arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
-  access_scope {
-    type = "cluster"
-  }
-
-  depends_on = [aws_eks_access_entry.sso_admin]
+  access_scope { type = "cluster" }
+  depends_on    = [aws_eks_access_entry.sso_admin]
 }
 
 #########################################################
@@ -39,31 +36,6 @@ resource "aws_eks_access_policy_association" "github_runner_policy" {
   principal_arn = aws_eks_access_entry.github_runner.principal_arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
-  access_scope {
-    type = "cluster"
+    access_scope { type = "cluster" }
+    depends_on    = [aws_eks_access_entry.github_runner]
   }
-
-  depends_on = [aws_eks_access_entry.github_runner]
-}
-
-#########################################################
-# 3. Node Role (Worker Nodes)
-#########################################################
-
-resource "aws_eks_access_entry" "node_role_entry" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = aws_iam_role.node_role.arn
-  type          = "EC2"
-
-  depends_on = [aws_eks_cluster.cluster]
-}
-
-resource "aws_eks_access_policy_association" "node_role_policy" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = aws_iam_role.node_role.arn
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-
-  access_scope {
-    type = "cluster"
-  }
-}

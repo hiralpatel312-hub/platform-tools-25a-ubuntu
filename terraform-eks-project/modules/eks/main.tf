@@ -42,7 +42,7 @@ resource "aws_eks_addon" "ebs_csi" {
   depends_on = [
     aws_eks_cluster.cluster,
     aws_iam_openid_connect_provider.eks,
-    aws_iam_role_policy_attachment.ebs_csi_policy  
+    aws_iam_role_policy_attachment.ebs_csi_policy
   ]
 }
 
@@ -50,30 +50,4 @@ resource "aws_eks_addon" "coredns" {
   cluster_name = aws_eks_cluster.cluster.name
   addon_name   = "coredns"
   depends_on   = [aws_eks_cluster.cluster]
-}
-
-#########################################################
-# 3. Cluster IAM Role
-#########################################################
-
-resource "aws_iam_role" "cluster_role" {
-  name = "${var.project_name}-${var.environment}-cluster-role"
-
-  assume_role_policy = data.aws_iam_policy_document.cluster_assume_role.json
-}
-
-data "aws_iam_policy_document" "cluster_assume_role" {
-  statement {
-    effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["eks.amazonaws.com"]
-    }
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "cluster_policy" {
-  role       = aws_iam_role.cluster_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }

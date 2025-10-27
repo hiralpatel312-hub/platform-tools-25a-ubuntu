@@ -1,18 +1,22 @@
-#########################################################
-# IAM Roles & Policies
+ #########################################################
+# 1. Cluster IAM Role
 #########################################################
 
-# Cluster role
 resource "aws_iam_role" "cluster_role" {
-  name = "${var.project_name}-${var.environment}-eks-cluster-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action   = ["sts:AssumeRole"]
-      Effect   = "Allow"
-      Principal = { Service = "eks.amazonaws.com" }
-    }]
-  })
+  name = "${var.project_name}-${var.environment}-cluster-role"
+
+  assume_role_policy = data.aws_iam_policy_document.cluster_assume_role.json
+}
+
+data "aws_iam_policy_document" "cluster_assume_role" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["eks.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "cluster_policy" {
@@ -20,17 +24,25 @@ resource "aws_iam_role_policy_attachment" "cluster_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-# Node role
+#########################################################
+# 2. Worker Node IAM Role
+#########################################################
+
 resource "aws_iam_role" "node_role" {
-  name = "${var.project_name}-${var.environment}-eks-node-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action   = ["sts:AssumeRole"]
-      Effect   = "Allow"
-      Principal = { Service = "ec2.amazonaws.com" }
-    }]
-  })
+  name = "${var.project_name}-${var.environment}-node-role"
+
+  assume_role_policy = data.aws_iam_policy_document.eks_node_assume_role.json
+}
+
+data "aws_iam_policy_document" "eks_node_assume_role" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "worker_node_policy" {
@@ -47,40 +59,3 @@ resource "aws_iam_role_policy_attachment" "worker_ecr_readonly" {
   role       = aws_iam_role.node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
-
-# OIDC provider
-data "tls_certificate" "oidc_cert" {
-  url = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
-}
-
-resource "aws_iam_openid_connect_provider" "eks" {
-  url             = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.oidc_cert.certificates[0].sha1_fingerprint]
-}
-
-# EBS CSI Role
-resource "aws_iam_role" "ebs_csi" {
-  name = "${var.project_name}-${var.environment}-ebs-csi-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Federated = aws_iam_openid_connect_provider.eks.arn
-      }
-      Action = "sts:AssumeRoleWithWebIdentity"
-      Condition = {
-        StringEquals = {
-          "${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, "https://", "")}:sub" = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
-        }
-      }
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ebs_csi_policy" {
-  role       = aws_iam_role.ebs_csi.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-}
-
