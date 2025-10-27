@@ -15,6 +15,8 @@ module "vpc" {
 module "eks" {
   source                 = "./modules/eks"
   project_name           = var.project_name
+  cluster_name = "eks-cluster-dev-cluster"
+  node_role_arn = aws_iam_role.node_role.arn
   environment            = var.environment
   aws_region             = var.aws_region
   k8s_version            = var.k8s_version

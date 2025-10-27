@@ -48,3 +48,12 @@ variable "github_tf_role_arn" {
   type        = string
   default     = ""
 }
+variable "cluster_name" {
+  description = "Name of the existing EKS cluster"
+  type        = string
+}
+
+variable "node_role_arn" {
+  description = "ARN of the IAM role used by self-managed nodes"
+  type        = string
+}

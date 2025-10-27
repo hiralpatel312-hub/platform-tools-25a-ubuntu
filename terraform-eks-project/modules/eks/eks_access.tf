@@ -59,13 +59,11 @@ resource "aws_eks_access_entry" "node_role_entry" {
 }
 
 resource "aws_eks_access_policy_association" "node_role_policy" {
-  cluster_name  = aws_eks_cluster.eks.name
-  principal_arn = aws_iam_role.eks_node_role.arn
+  cluster_name  = var.cluster_name
+  principal_arn = var.node_role_arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
     type = "cluster"
   }
-
-  depends_on = [aws_eks_access_entry.node_role_entry]
 }
