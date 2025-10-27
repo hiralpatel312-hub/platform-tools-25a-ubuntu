@@ -1,6 +1,6 @@
-#########################################
+#########################################################
 # 1. AWS SSO Administrator Access
-#########################################
+#########################################################
 
 resource "aws_eks_access_entry" "sso_admin" {
   cluster_name  = aws_eks_cluster.cluster.name
@@ -19,12 +19,12 @@ resource "aws_eks_access_policy_association" "sso_admin_policy" {
     type = "cluster"
   }
 
-  depends_on = [aws_eks_cluster.cluster]
+  depends_on = [aws_eks_access_entry.sso_admin]
 }
 
-#########################################
-# 2. GitHub Actions Role (CI/CD + Terraform)
-#########################################
+#########################################################
+# 2. GitHub Actions Role
+#########################################################
 
 resource "aws_eks_access_entry" "github_runner" {
   cluster_name  = aws_eks_cluster.cluster.name
@@ -46,9 +46,9 @@ resource "aws_eks_access_policy_association" "github_runner_policy" {
   depends_on = [aws_eks_access_entry.github_runner]
 }
 
-#########################################
-# 3. Node Group Role (Worker Nodes)
-#########################################
+#########################################################
+# 3. Node Role (Worker Nodes)
+#########################################################
 
 resource "aws_eks_access_entry" "node_role_entry" {
   cluster_name  = aws_eks_cluster.cluster.name
@@ -59,8 +59,8 @@ resource "aws_eks_access_entry" "node_role_entry" {
 }
 
 resource "aws_eks_access_policy_association" "node_role_policy" {
-  cluster_name  = var.cluster_name
-  principal_arn = var.node_role_arn
+  cluster_name  = aws_eks_cluster.cluster.name
+  principal_arn = aws_iam_role.node_role.arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {

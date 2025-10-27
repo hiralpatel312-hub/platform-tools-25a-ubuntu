@@ -1,5 +1,5 @@
 #########################################################
-# EKS Cluster
+# 1. EKS Cluster
 #########################################################
 
 resource "aws_eks_cluster" "cluster" {
@@ -13,13 +13,9 @@ resource "aws_eks_cluster" "cluster" {
     endpoint_private_access = false
   }
 
-  access_config {
-    authentication_mode = "API_AND_CONFIG_MAP"
-  }
-
   depends_on = [
     aws_iam_role.cluster_role,
-    aws_iam_role_policy_attachment.cluster_policy,
+    aws_iam_role_policy_attachment.cluster_policy
   ]
 
   tags = {
@@ -29,14 +25,13 @@ resource "aws_eks_cluster" "cluster" {
 }
 
 #########################################################
-# Managed Add-ons
+# 2. Managed Add-ons
 #########################################################
 
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name = aws_eks_cluster.cluster.name
   addon_name   = "vpc-cni"
-
-  depends_on = [aws_eks_cluster.cluster]
+  depends_on   = [aws_eks_cluster.cluster]
 }
 
 resource "aws_eks_addon" "ebs_csi" {
@@ -54,18 +49,31 @@ resource "aws_eks_addon" "ebs_csi" {
 resource "aws_eks_addon" "coredns" {
   cluster_name = aws_eks_cluster.cluster.name
   addon_name   = "coredns"
-
-  depends_on = [aws_eks_cluster.cluster]
+  depends_on   = [aws_eks_cluster.cluster]
 }
 
 #########################################################
-# EKS Cluster Data
+# 3. Cluster IAM Role
 #########################################################
 
-data "aws_eks_cluster" "cluster" {
-  name = aws_eks_cluster.cluster.name
+resource "aws_iam_role" "cluster_role" {
+  name = "${var.project_name}-${var.environment}-cluster-role"
+
+  assume_role_policy = data.aws_iam_policy_document.cluster_assume_role.json
 }
 
-data "aws_eks_cluster_auth" "cluster" {
-  name = aws_eks_cluster.cluster.name
+data "aws_iam_policy_document" "cluster_assume_role" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["eks.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "cluster_policy" {
+  role       = aws_iam_role.cluster_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
