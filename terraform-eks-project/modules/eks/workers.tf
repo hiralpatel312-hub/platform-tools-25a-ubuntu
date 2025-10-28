@@ -16,43 +16,32 @@ resource "aws_launch_template" "nodes_lt" {
     name = aws_iam_instance_profile.node_profile.name
   }
 
-  user_data = base64encode(<<-EOT
+  user_data = base64encode(<<-EOF
     #!/bin/bash
-    /etc/eks/bootstrap.sh ${var.project_name}-${var.environment}-cluster
-  EOT
+    set -o xtrace
+    /etc/eks/bootstrap.sh ${var.cluster_name} \
+      --kubelet-extra-args "--node-labels=role=worker,Name=${var.cluster_name}-node"
+    yum install -y iscsi-initiator-utils
+    systemctl enable iscsid
+    systemctl start iscsid
+  EOF
   )
-
   lifecycle {
     create_before_destroy = true
   }
 }
 
 resource "aws_autoscaling_group" "nodes_asg" {
-  name                = "${var.project_name}-${var.environment}-nodes-asg1"
+  name                = "${var.project_name}-${var.environment}-nodes-asg"
   max_size            = var.max_size
   min_size            = var.min_size
   desired_capacity    = var.desired_capacity
   vpc_zone_identifier = var.private_subnet_ids
 
-  mixed_instances_policy {
-    launch_template {
-      launch_template_specification {
-        launch_template_id = aws_launch_template.nodes_lt.id
-        version            = "$Latest"
-      }
-
-      dynamic "override" {
-        for_each = var.ec2_instance_types
-        content {
-          instance_type = override.value
-        }
-      }
-    }
-
-    instances_distribution {
-      on_demand_percentage_above_base_capacity = 20
-      spot_allocation_strategy                 = "lowest-price"
-    }
+  # Use On-Demand EC2 instances only
+  launch_template {
+    id      = aws_launch_template.nodes_lt.id
+    version = "$Latest"
   }
 
   tag {

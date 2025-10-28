@@ -13,6 +13,10 @@ variable "k8s_version" {
   description = "Kubernetes version"
 }
 
+variable "cluster_name" {
+  type        = string
+  description = "EKS Cluster name"
+}
 variable "public_subnet_ids" {
   type        = list(string)
   description = "Public subnet IDs from VPC module"
