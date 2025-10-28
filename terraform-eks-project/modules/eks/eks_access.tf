@@ -2,7 +2,7 @@
 # Wait for EKS Cluster Propagation
 #########################################
 resource "time_sleep" "wait_for_cluster" {
-  create_duration = "180s"  # 3 minutes
+  create_duration = "300s"  
   depends_on      = [aws_eks_cluster.cluster]
 }
 
