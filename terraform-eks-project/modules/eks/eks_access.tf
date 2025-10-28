@@ -37,7 +37,6 @@ resource "aws_eks_access_entry" "sso_admin" {
 
   depends_on = [
     time_sleep.wait_for_cluster,
-    null_resource.wait_for_access_entry_ready
   ]
 }
 
