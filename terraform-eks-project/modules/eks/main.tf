@@ -12,7 +12,7 @@ resource "aws_eks_cluster" "cluster" {
     endpoint_public_access  = true
     endpoint_private_access = false
   }
-access_config {
+  access_config {
     authentication_mode = "API_AND_CONFIG_MAP"
   }
   depends_on = [aws_iam_role.cluster_role]
