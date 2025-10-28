@@ -52,3 +52,7 @@ variable "github_runner_terraform_role_arn" {
   type        = string
   description = "GitHub Runner IAM role for Terraform automation"
 }
+variable "cluster_name" {
+  type        = string
+  description = "EKS Cluster name"
+}
