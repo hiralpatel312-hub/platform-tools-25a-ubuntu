@@ -1,3 +1,12 @@
+# Add this null_resource delay before EKS access entries
+resource "null_resource" "wait_for_auth_mode" {
+  depends_on = [aws_eks_cluster.cluster]
+
+  provisioner "local-exec" {
+    # Wait a bit to ensure cluster auth mode is active
+    command = "sleep 60"
+  }
+}
 #########################################
 # 1. AWS SSO Administrator Access
 #########################################
@@ -6,7 +15,7 @@ resource "aws_eks_access_entry" "sso_admin" {
   principal_arn = "arn:aws:iam::383585068161:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_Administrator_a72305569e9173dc"
   type          = "STANDARD"
 
-  depends_on = [aws_eks_cluster.cluster]
+  depends_on = [null_resource.wait_for_auth_mode]
 }
 
 resource "aws_eks_access_policy_association" "sso_admin_policy" {
@@ -16,7 +25,7 @@ resource "aws_eks_access_policy_association" "sso_admin_policy" {
 
   access_scope { type = "cluster" }
 
-  depends_on = [aws_eks_cluster.cluster]
+  depends_on = [aws_eks_access_entry.sso_admin]
 }
 
 #########################################
