@@ -76,7 +76,7 @@ resource "aws_eks_access_policy_association" "github_runner_policy" {
 
 #########################################
 # 3. Node Group Role (Worker Nodes)
-#########################################
+########################################
 resource "aws_eks_access_entry" "node_role_entry" {
   cluster_name  = aws_eks_cluster.cluster.name
   principal_arn = aws_iam_role.node_role.arn
