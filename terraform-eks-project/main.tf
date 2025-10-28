@@ -13,15 +13,18 @@ module "vpc" {
 }
 
 module "eks" {
-  source                 = "./modules/eks"
-  project_name           = var.project_name
-  environment            = var.environment
-  k8s_version            = var.k8s_version
-  worker_sg_id        = module.vpc.eks_worker_sg_id  
-  public_subnet_ids      = module.vpc.public_subnet_ids
-  private_subnet_ids     = module.vpc.private_subnet_ids
-  ec2_instance_types     = var.ec2_instance_types
-  desired_capacity       = var.desired_capacity
-  min_size               = var.min_size
-  max_size               = var.max_size
+  source       = "./modules/eks"
+  project_name = var.project_name
+  environment  = var.environment
+  k8s_version  = var.k8s_version
+  public_subnet_ids  = module.vpc.public_subnet_ids
+  private_subnet_ids = module.vpc.private_subnet_ids
+  worker_sg_id       = module.vpc.eks_worker_sg_id
+  ec2_instance_types = var.ec2_instance_types
+  desired_capacity   = var.desired_capacity
+  min_size           = var.min_size
+  max_size           = var.max_size
+  sso_admin_role_arn                 = var.sso_admin_role_arn
+  github_runner_ci_role_arn          = var.github_runner_ci_role_arn
+  github_runner_terraform_role_arn   = var.github_runner_terraform_role_arn
 }
