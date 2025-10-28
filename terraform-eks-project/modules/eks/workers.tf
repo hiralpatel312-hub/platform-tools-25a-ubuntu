@@ -28,7 +28,7 @@ resource "aws_launch_template" "nodes_lt" {
 }
 
 resource "aws_autoscaling_group" "nodes_asg" {
-  name                = "${var.project_name}-${var.environment}-nodes-asg"
+  name                = "${var.project_name}-${var.environment}-nodes-asg1"
   max_size            = var.max_size
   min_size            = var.min_size
   desired_capacity    = var.desired_capacity
