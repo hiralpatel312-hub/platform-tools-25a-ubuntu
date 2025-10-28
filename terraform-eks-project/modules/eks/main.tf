@@ -14,7 +14,7 @@ resource "aws_eks_cluster" "cluster" {
   }
 
   access_config {
-    # Enables both AWS API-based access and the legacy ConfigMap system
+
     authentication_mode = "API_AND_CONFIG_MAP"
   }
 
