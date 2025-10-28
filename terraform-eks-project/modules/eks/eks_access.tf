@@ -1,12 +1,20 @@
 #########################################
+# Wait for EKS Cluster Propagation
+#########################################
+resource "time_sleep" "wait_for_cluster" {
+  create_duration = "180s"  # 3 minutes
+  depends_on      = [aws_eks_cluster.cluster]
+}
+
+#########################################
 # 1. AWS SSO Administrator Access
 #########################################
 resource "aws_eks_access_entry" "sso_admin" {
   cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = "arn:aws:iam::383585068161:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_Administrator_a72305569e9173dc"
+  principal_arn = var.sso_admin_role_arn
   type          = "STANDARD"
 
-  depends_on = [aws_eks_cluster.cluster]
+  depends_on = [time_sleep.wait_for_cluster]
 }
 
 resource "aws_eks_access_policy_association" "sso_admin_policy" {
@@ -24,10 +32,10 @@ resource "aws_eks_access_policy_association" "sso_admin_policy" {
 #########################################
 resource "aws_eks_access_entry" "github_runner" {
   cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = "arn:aws:iam::383585068161:role/GitHubActionsTerraformIAMrole"
+  principal_arn = var.github_runner_terraform_role_arn
   type          = "STANDARD"
 
-  depends_on = [aws_eks_cluster.cluster]
+  depends_on = [time_sleep.wait_for_cluster]
 }
 
 resource "aws_eks_access_policy_association" "github_runner_policy" {

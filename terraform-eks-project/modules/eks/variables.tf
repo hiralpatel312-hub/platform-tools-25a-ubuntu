@@ -47,3 +47,17 @@ variable "max_size" {
   type        = number
   description = "Maximum number of worker nodes"
 }
+variable "sso_admin_role_arn" {
+  type        = string
+  description = "ARN of AWS SSO Administrator Role"
+}
+
+variable "github_runner_ci_role_arn" {
+  type        = string
+  description = "ARN of GitHub Actions CI Role"
+}
+
+variable "github_runner_terraform_role_arn" {
+  type        = string
+  description = "ARN of GitHub Actions Terraform Role"
+}
