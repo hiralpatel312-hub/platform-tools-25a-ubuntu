@@ -9,3 +9,8 @@ output "cluster_endpoint" {
 output "node_asg_name" {
   value = aws_autoscaling_group.nodes_asg.name
 }
+
+output "cluster_ca_certificate" {
+  value = aws_eks_cluster.cluster.certificate_authority[0].data
+}
+

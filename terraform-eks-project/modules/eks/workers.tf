@@ -71,24 +71,3 @@ resource "aws_autoscaling_group" "nodes_asg" {
     aws_iam_role_policy_attachment.worker_ecr_readonly
   ]
 }
-# Add aws-auth ConfigMap after cluster
-resource "kubernetes_config_map" "aws_auth" {
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = yamlencode([
-      {
-        rolearn  = aws_iam_role.node_role.arn
-        username = "system:node:{{EC2PrivateDNSName}}"
-        groups   = ["system:bootstrappers", "system:nodes"]
-      }
-    ])
-  }
-
-  depends_on = [
-    aws_eks_cluster.cluster
-  ]
-}
