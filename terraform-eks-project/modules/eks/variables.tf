@@ -1,42 +1,49 @@
 variable "project_name" {
-  description = "Project name"
   type        = string
+  description = "Project name"
 }
 
 variable "environment" {
-  description = "Environment name"
   type        = string
+  description = "Environment name"
 }
 
 variable "k8s_version" {
-  description = "Kubernetes version"
   type        = string
+  description = "Kubernetes version"
 }
 
 variable "public_subnet_ids" {
-  description = "Public subnet IDs for the cluster"
   type        = list(string)
+  description = "Public subnet IDs from VPC module"
 }
+
 variable "private_subnet_ids" {
-  description = "List of private subnet IDs for the worker nodes"
   type        = list(string)
+  description = "Private subnet IDs from VPC module"
 }
+
+variable "worker_sg_id" {
+  type        = string
+  description = "Security Group ID for worker nodes"
+}
+
 variable "ec2_instance_types" {
-  description = "List of EC2 instance types for worker nodes"
   type        = list(string)
+  description = "List of EC2 instance types for worker nodes"
 }
 
 variable "desired_capacity" {
-  description = "ASG desired capacity"
   type        = number
+  description = "Desired number of worker nodes"
 }
 
 variable "min_size" {
-  description = "ASG minimum size"
   type        = number
+  description = "Minimum number of worker nodes"
 }
 
 variable "max_size" {
-  description = "ASG maximum size"
   type        = number
+  description = "Maximum number of worker nodes"
 }
