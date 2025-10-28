@@ -3,7 +3,7 @@ resource "null_resource" "aws_auth" {
     command = <<EOT
       # Add EKS node role
       eksctl create iamidentitymapping \
-        --cluster ${var.cluster_name} \
+        --cluster ${aws_eks_cluster.cluster.name} \
         --region ${var.aws_region} \
         --arn ${module.eks.node_role_arn} \
         --username system:node:{{EC2PrivateDNSName}} \
@@ -12,7 +12,7 @@ resource "null_resource" "aws_auth" {
 
       # Add GitHub Actions role
       eksctl create iamidentitymapping \
-        --cluster ${var.cluster_name} \
+        --cluster ${aws_eks_cluster.cluster.name} \
         --region ${var.aws_region} \
         --arn ${var.github_runner_ci_role_arn} \
         --username github-runner \

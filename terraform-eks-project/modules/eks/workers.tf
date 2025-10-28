@@ -19,8 +19,8 @@ resource "aws_launch_template" "nodes_lt" {
   user_data = base64encode(<<-EOF
     #!/bin/bash
     set -o xtrace
-    /etc/eks/bootstrap.sh ${var.cluster_name} \
-      --kubelet-extra-args "--node-labels=role=worker,Name=${var.cluster_name}-node"
+    /etc/eks/bootstrap.sh ${aws_eks_cluster.cluster.name} \
+      --kubelet-extra-args "--node-labels=role=worker,Name=${aws_eks_cluster.cluster.name}-node"
     yum install -y iscsi-initiator-utils
     systemctl enable iscsid
     systemctl start iscsid
