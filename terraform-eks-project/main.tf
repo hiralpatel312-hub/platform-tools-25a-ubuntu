@@ -17,7 +17,7 @@ module "eks" {
   project_name = var.project_name
   environment  = var.environment
   k8s_version  = var.k8s_version
-  cluster_name   = "${var.project_name}-${var.environment}-cluster"
+  cluster_name   = var.cluster_name
   public_subnet_ids  = module.vpc.public_subnet_ids
   private_subnet_ids = module.vpc.private_subnet_ids
   worker_sg_id       = module.vpc.eks_worker_sg_id
