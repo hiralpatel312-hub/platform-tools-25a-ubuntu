@@ -9,3 +9,6 @@ output "eks_cluster_name" {
 output "eks_endpoint" {
   value = module.eks.cluster_endpoint
 }
+output "aws_auth_ready" {
+  value = true
+}

@@ -56,6 +56,7 @@ variable "cluster_name" {
   type        = string
   description = "EKS Cluster name"
 }
-output "aws_auth_ready" {
-  value = true
+variable "node_role_arn" {
+  type        = string
+  description = "IAM Role ARN for EKS Worker Nodes"
 }
