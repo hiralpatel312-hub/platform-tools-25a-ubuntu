@@ -56,3 +56,6 @@ variable "cluster_name" {
   type        = string
   description = "EKS Cluster name"
 }
+output "aws_auth_ready" {
+  value = true
+}

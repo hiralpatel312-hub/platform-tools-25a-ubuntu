@@ -47,5 +47,5 @@ resource "aws_autoscaling_group" "nodes_asg" {
   }
 
   # Ensure aws-auth is applied first
-  depends_on = [kubernetes_config_map.aws_auth]
+  depends_on = [var.aws_auth_ready]
 }

@@ -23,6 +23,7 @@ module "eks" {
   worker_sg_id       = module.vpc.eks_worker_sg_id
   ec2_instance_types = var.ec2_instance_types
   desired_capacity   = var.desired_capacity
+  aws_auth_ready = true 
   min_size           = var.min_size
   max_size           = var.max_size
   sso_admin_role_arn                 = var.sso_admin_role_arn

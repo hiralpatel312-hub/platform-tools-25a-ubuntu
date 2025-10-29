@@ -65,3 +65,6 @@ variable "github_runner_terraform_role_arn" {
   type        = string
   description = "ARN of GitHub Actions Terraform Role"
 }
+variable "aws_auth_ready" {
+  type = bool
+}
