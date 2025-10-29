@@ -1,29 +1,23 @@
-resource "null_resource" "aws_auth" {
-  provisioner "local-exec" {
-    command = <<EOT
-      # Add EKS node role
-      eksctl create iamidentitymapping \
-        --cluster ${module.eks.cluster_name} \
-        --region ${var.aws_region} \
-        --arn ${module.eks.node_role_arn} \
-        --username system:node:{{EC2PrivateDNSName}} \
-        --group system:bootstrappers \
-        --approve
-
-      # Add GitHub Actions role
-      eksctl create iamidentitymapping \
-        --cluster ${module.eks.cluster_name} \
-        --region ${var.aws_region} \
-        --arn ${var.github_runner_ci_role_arn} \
-        --username github-runner \
-        --group system:masters \
-        --approve
-    EOT
-
-    environment = {
-      AWS_REGION = var.aws_region
-    }
+resource "kubernetes_config_map" "aws_auth" {
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
   }
 
-  depends_on = [module.eks]
+  data = {
+    mapRoles = yamlencode([
+      {
+        rolearn  = aws_iam_role.eks_node_role.arn
+        username = "system:node:{{EC2PrivateDNSName}}"
+        groups   = ["system:bootstrappers", "system:nodes"]
+      },
+      {
+        rolearn  = var.github_runner_terraform_role_arn
+        username = "github-runner"
+        groups   = ["system:masters"]
+      }
+    ])
+  }
+
+  depends_on = [aws_eks_node_group.node_group]
 }
