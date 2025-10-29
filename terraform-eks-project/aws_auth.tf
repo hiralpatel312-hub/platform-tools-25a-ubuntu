@@ -7,7 +7,7 @@ resource "kubernetes_config_map" "aws_auth" {
   data = {
     mapRoles = yamlencode([
       {
-        rolearn  = aws_iam_role.node_role.arn
+        rolearn  = var.sso_admin_role_arn
         username = "system:node:{{EC2PrivateDNSName}}"
         groups   = ["system:bootstrappers", "system:nodes"]
       },
@@ -18,10 +18,4 @@ resource "kubernetes_config_map" "aws_auth" {
       }
     ])
   }
-
-  # Ensure this runs after the cluster exists
-  depends_on = [
-    aws_eks_cluster.cluster,
-    aws_iam_role.node_role
-  ]
 }
