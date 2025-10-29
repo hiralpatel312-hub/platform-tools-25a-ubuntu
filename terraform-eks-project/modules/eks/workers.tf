@@ -16,21 +16,14 @@ resource "aws_launch_template" "nodes_lt" {
     name = aws_iam_instance_profile.node_profile.name
   }
 
-  user_data = base64encode(<<-EOF
-    #!/bin/bash
-    set -o xtrace
-    /etc/eks/bootstrap.sh ${aws_eks_cluster.cluster.name} \
-      --kubelet-extra-args "--node-labels=role=worker,Name=${aws_eks_cluster.cluster.name}-node"
-    yum install -y iscsi-initiator-utils
-    systemctl enable iscsid
-    systemctl start iscsid
-  EOF
-  )
+  user_data = base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
+    cluster_name = var.cluster_name
+  }))
+
   lifecycle {
     create_before_destroy = true
   }
 }
-
 resource "aws_autoscaling_group" "nodes_asg" {
   name                = "${var.project_name}-${var.environment}-nodes-asg"
   max_size            = var.max_size
@@ -38,14 +31,13 @@ resource "aws_autoscaling_group" "nodes_asg" {
   desired_capacity    = var.desired_capacity
   vpc_zone_identifier = var.private_subnet_ids
 
-  # Use On-Demand EC2 instances only
   launch_template {
     id      = aws_launch_template.nodes_lt.id
     version = "$Latest"
   }
 
   tag {
-    key                 = "kubernetes.io/cluster/${var.project_name}-${var.environment}-cluster"
+    key                 = "kubernetes.io/cluster/${var.cluster_name}"
     value               = "owned"
     propagate_at_launch = true
   }
@@ -54,9 +46,6 @@ resource "aws_autoscaling_group" "nodes_asg" {
     create_before_destroy = true
   }
 
-  depends_on = [
-    aws_iam_role_policy_attachment.worker_node_policy,
-    aws_iam_role_policy_attachment.worker_cni_policy,
-    aws_iam_role_policy_attachment.worker_ecr_readonly
-  ]
+  # Ensure aws-auth is applied first
+  depends_on = [kubernetes_config_map.aws_auth]
 }
