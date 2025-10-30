@@ -6,7 +6,7 @@ resource "time_sleep" "wait_for_cluster" {
   depends_on      = [aws_eks_cluster.cluster]
 }
 
-#########################################
+########################################
 # Optional: Poll EKS until Access Entry works
 ########################################
 resource "null_resource" "wait_for_access_entry_ready" {
