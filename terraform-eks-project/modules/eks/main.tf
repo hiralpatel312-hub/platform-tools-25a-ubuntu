@@ -1,86 +1,63 @@
-#########################################
+# ------------------------------
 # EKS Cluster
-#########################################
+# ------------------------------
 resource "aws_eks_cluster" "cluster" {
-  name     = var.cluster_name
-  version  = var.k8s_version
+  name     = "${var.project_name}-${var.environment}-cluster"
   role_arn = aws_iam_role.cluster_role.arn
+  version  = var.k8s_version
 
   vpc_config {
-    subnet_ids         = var.public_subnet_ids
-    security_group_ids = [var.cluster_security_group_id]
-    endpoint_public_access  = true
+    subnet_ids             = var.public_subnet_ids
+    endpoint_public_access = true
     endpoint_private_access = false
   }
 
+  # Authentication mode must include CONFIG_MAP for access entries
   access_config {
     authentication_mode = "API_AND_CONFIG_MAP"
-    bootstrap_cluster_creator_admin_permissions = true
   }
+}
 
-  depends_on = [
-    aws_iam_role_policy_attachment.cluster_policy
-  ]
+# ------------------------------
+# Wait for Cluster creation
+# ------------------------------
+resource "time_sleep" "wait_for_cluster" {
+  depends_on      = [aws_eks_cluster.cluster]
+  create_duration = "60s"  # Wait 1 min to ensure cluster is ready
 }
-# Cluster security group
-resource "aws_security_group" "eks_cluster_sg" {
-  name   = "${var.cluster_name}-cluster-sg"
-  vpc_id = var.vpc_id
-  tags = {
-    Name = "${var.cluster_name}-cluster-sg"
-  }
+
+# ------------------------------
+# OIDC Provider (for IRSA)
+# ------------------------------
+resource "aws_iam_openid_connect_provider" "eks" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da0afd10ebc"]
+  url             = aws_eks_cluster.cluster.identity[0].oidc[0].issuer
 }
-#########################################
-# Add-ons
-#########################################
-# VPC CNI
+
+# ------------------------------
+# Managed Add-ons
+# ------------------------------
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name = aws_eks_cluster.cluster.name
   addon_name   = "vpc-cni"
-  resolve_conflicts_on_create = "OVERWRITE"
-  resolve_conflicts_on_update = "OVERWRITE"
-
-  depends_on = [aws_eks_cluster.cluster]
+  depends_on   = [time_sleep.wait_for_cluster]
 }
 
-# EBS CSI
-resource "aws_iam_role" "ebs_csi" {
-  name               = "${var.project_name}-${var.environment}-ebs-csi-role"
-  assume_role_policy = data.aws_iam_policy_document.ebs_csi_assume_role.json
-}
-
-data "aws_iam_policy_document" "ebs_csi_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["eks.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "ebs_csi_policy" {
-  role       = aws_iam_role.ebs_csi.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-}
-
-resource "aws_eks_addon" "ebs_csi" {
-  cluster_name             = aws_eks_cluster.cluster.name
-  addon_name               = "aws-ebs-csi-driver"
-  service_account_role_arn = aws_iam_role.ebs_csi.arn
-  resolve_conflicts_on_create = "OVERWRITE"
-  resolve_conflicts_on_update = "OVERWRITE"
-
-  depends_on = [
-    aws_eks_cluster.cluster,
-    aws_iam_role_policy_attachment.ebs_csi_policy
-  ]
-}
-
-# CoreDNS
 resource "aws_eks_addon" "coredns" {
   cluster_name = aws_eks_cluster.cluster.name
   addon_name   = "coredns"
-  resolve_conflicts_on_create = "OVERWRITE"
-  resolve_conflicts_on_update = "OVERWRITE"
+  depends_on   = [time_sleep.wait_for_cluster]
+}
+
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name = aws_eks_cluster.cluster.name
+  addon_name   = "aws-ebs-csi-driver"
+  depends_on   = [time_sleep.wait_for_cluster]
+}
+
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name = aws_eks_cluster.cluster.name
+  addon_name   = "kube-proxy"
+  depends_on   = [time_sleep.wait_for_cluster]
 }
