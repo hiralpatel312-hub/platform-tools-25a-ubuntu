@@ -34,11 +34,17 @@ resource "aws_iam_openid_connect_provider" "eks" {
 # # Fetch latest compatible add-on versions for EKS
 # #####################################################
 
-resource "aws_eks_addon" "vpc_cni" {
-  cluster_name    = aws_eks_cluster.cluster.name
-  addon_name      = "vpc-cni"
-  addon_version   = "latest"
+data "aws_eks_addon_version" "vpc_cni" {
+  addon_name         = "vpc-cni"
+  kubernetes_version = aws_eks_cluster.cluster.version
 }
+
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name      = aws_eks_cluster.cluster.name
+  addon_name        = "vpc-cni"
+  addon_version     = data.aws_eks_addon_version.vpc_cni.latest_version
+}
+
 
 # # CoreDNS
 # data "aws_eks_addon_version" "coredns_latest" {
