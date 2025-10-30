@@ -15,10 +15,10 @@ resource "aws_launch_template" "nodes_lt" {
   }
 
   user_data = base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
-    cluster_name       = var.cluster_name
-    cluster_endpoint   = aws_eks_cluster.cluster.endpoint
-    cluster_ca         = aws_eks_cluster.cluster.certificate_authority[0].data
-  }))
+  CLUSTER_NAME     = aws_eks_cluster.cluster.name
+  CLUSTER_ENDPOINT = aws_eks_cluster.cluster.endpoint
+  CLUSTER_CA       = aws_eks_cluster.cluster.certificate_authority[0].data
+}))
 
   lifecycle {
     create_before_destroy = true

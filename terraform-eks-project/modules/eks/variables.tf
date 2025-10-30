@@ -46,8 +46,3 @@ variable "sso_admin_role_arn" {
 variable "github_runner_terraform_role_arn" { 
     type = string 
     }
-
-variable "cluster_security_group_id" {
-  type        = string
-  description = "Security group ID for EKS control plane"
-}
