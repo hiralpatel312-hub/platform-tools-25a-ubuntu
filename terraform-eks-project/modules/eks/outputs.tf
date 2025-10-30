@@ -13,7 +13,3 @@ output "cluster_ca_certificate" {
 output "node_role_arn" {
   value = aws_iam_role.node_role.arn
 }
-
-output "worker_asg_name" {
-  value = aws_autoscaling_group.nodes_asg.name
-}
