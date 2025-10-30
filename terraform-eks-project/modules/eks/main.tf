@@ -19,7 +19,7 @@ resource "aws_eks_cluster" "cluster" {
 # ------------------------------
 resource "time_sleep" "wait_for_cluster" {
   depends_on      = [aws_eks_cluster.cluster]
-  create_duration = "60s"  # Wait 1 min to ensure cluster is ready
+  create_duration = "300s"  # min to ensure cluster is ready
 }
 
 # ------------------------------
@@ -31,29 +31,36 @@ resource "aws_iam_openid_connect_provider" "eks" {
   url             = aws_eks_cluster.cluster.identity[0].oidc[0].issuer
 }
 
-# ------------------------------
-# Managed Add-ons
-# ------------------------------
-resource "aws_eks_addon" "vpc_cni" {
-  cluster_name = aws_eks_cluster.cluster.name
-  addon_name   = "vpc-cni"
-  depends_on   = [time_sleep.wait_for_cluster]
+#########################################
+# EKS Add-ons (depends_on ASG)
+#########################################
+
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name   = aws_eks_cluster.cluster.name
+  addon_name     = "aws-ebs-csi-driver"
+  addon_version  = "v1.51.1-eksbuild.1"
+
+  depends_on = [
+    aws_autoscaling_group.nodes_asg
+  ]
 }
 
 resource "aws_eks_addon" "coredns" {
-  cluster_name = aws_eks_cluster.cluster.name
-  addon_name   = "coredns"
-  depends_on   = [time_sleep.wait_for_cluster]
-}
+  cluster_name  = aws_eks_cluster.cluster.name
+  addon_name    = "coredns"
+  addon_version = "v1.12.0-eksbuild.1"
 
-resource "aws_eks_addon" "ebs_csi" {
-  cluster_name = aws_eks_cluster.cluster.name
-  addon_name   = "aws-ebs-csi-driver"
-  depends_on   = [time_sleep.wait_for_cluster]
+  depends_on = [
+    aws_autoscaling_group.nodes_asg
+  ]
 }
 
 resource "aws_eks_addon" "kube_proxy" {
-  cluster_name = aws_eks_cluster.cluster.name
-  addon_name   = "kube-proxy"
-  depends_on   = [time_sleep.wait_for_cluster]
+  cluster_name  = aws_eks_cluster.cluster.name
+  addon_name    = "kube-proxy"
+  addon_version = "v1.27.0-eksbuild.1"
+
+  depends_on = [
+    aws_autoscaling_group.nodes_asg
+  ]
 }

@@ -1,6 +1,7 @@
 #########################################
 # Worker Nodes - Launch Template & ASG
 #########################################
+
 data "aws_ssm_parameter" "eks_ami" {
   name = "/aws/service/eks/optimized-ami/${var.k8s_version}/amazon-linux-2/recommended/image_id"
 }
@@ -38,7 +39,7 @@ resource "aws_autoscaling_group" "nodes_asg" {
   }
 
   tag {
-    key                 = "kubernetes.io/cluster/${var.cluster_name}"
+    key                 = "kubernetes.io/cluster/${aws_eks_cluster.cluster.name}"
     value               = "owned"
     propagate_at_launch = true
   }
@@ -47,24 +48,25 @@ resource "aws_autoscaling_group" "nodes_asg" {
     create_before_destroy = true
   }
 }
+
 #########################################
-# Security Group Rules for Worker Nodes
+# Security Groups
 #########################################
 
- # Security group for EKS cluster
+# Cluster SG
 resource "aws_security_group" "eks_cluster_sg" {
   name        = "${var.project_name}-${var.environment}-sg"
   vpc_id      = var.vpc_id
   description = "EKS cluster security group"
 }
 
-# Worker node security group
+# Worker SG
 resource "aws_security_group" "eks_worker_sg" {
-  name        = "${var.project_name}-${var.environment}-worker-sg"
-  vpc_id      = var.vpc_id
+  name   = "${var.project_name}-${var.environment}-worker-sg"
+  vpc_id = var.vpc_id
 }
 
-# Allow cluster to communicate with worker nodes
+# Cluster → Worker communication
 resource "aws_security_group_rule" "cluster_to_worker_https" {
   type                     = "ingress"
   from_port                = 443
@@ -74,6 +76,7 @@ resource "aws_security_group_rule" "cluster_to_worker_https" {
   source_security_group_id = aws_security_group.eks_cluster_sg.id
 }
 
+# Worker → Cluster
 resource "aws_security_group_rule" "worker_to_cluster" {
   type                     = "egress"
   from_port                = 0
@@ -82,7 +85,8 @@ resource "aws_security_group_rule" "worker_to_cluster" {
   security_group_id        = aws_security_group.eks_worker_sg.id
   source_security_group_id = aws_security_group.eks_cluster_sg.id
 }
-# Worker egress
+
+# Worker egress to Internet
 resource "aws_security_group_rule" "worker_egress" {
   type              = "egress"
   from_port         = 0
