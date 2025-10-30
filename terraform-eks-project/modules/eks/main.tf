@@ -30,37 +30,32 @@ resource "aws_iam_openid_connect_provider" "eks" {
   thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da0afd10ebc"]
   url             = aws_eks_cluster.cluster.identity[0].oidc[0].issuer
 }
+############################################
+# EKS Add-ons (Latest Compatible Versions)
+############################################
 
-#########################################
-# EKS Add-ons (depends_on ASG)
-#########################################
+# Automatically use the latest compatible version of aws-ebs-csi-driver
+data "aws_eks_addon_version" "ebs_csi_latest" {
+  addon_name         = "aws-ebs-csi-driver"
+  kubernetes_version = aws_eks_cluster.cluster.version
+  most_recent        = true
+}
 
 resource "aws_eks_addon" "ebs_csi" {
-  cluster_name   = aws_eks_cluster.cluster.name
-  addon_name     = "aws-ebs-csi-driver"
-  addon_version  = "v1.51.1-eksbuild.1"
-
-  depends_on = [
-    aws_autoscaling_group.nodes_asg
-  ]
+  cluster_name      = aws_eks_cluster.cluster.name
+  addon_name        = "aws-ebs-csi-driver"
+  addon_version     = data.aws_eks_addon_version.ebs_csi_latest.version
+  resolve_conflicts = "OVERWRITE"
 }
 
 resource "aws_eks_addon" "coredns" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  addon_name    = "coredns"
-  addon_version = "v1.12.0-eksbuild.1"
-
-  depends_on = [
-    aws_autoscaling_group.nodes_asg
-  ]
+  cluster_name      = aws_eks_cluster.cluster.name
+  addon_name        = "coredns"
+  resolve_conflicts = "OVERWRITE"
 }
 
 resource "aws_eks_addon" "kube_proxy" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  addon_name    = "kube-proxy"
-  addon_version = "v1.27.0-eksbuild.1"
-
-  depends_on = [
-    aws_autoscaling_group.nodes_asg
-  ]
+  cluster_name      = aws_eks_cluster.cluster.name
+  addon_name        = "kube-proxy"
+  resolve_conflicts = "OVERWRITE"
 }
