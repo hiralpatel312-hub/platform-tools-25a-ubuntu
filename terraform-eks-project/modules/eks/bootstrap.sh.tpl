@@ -1,9 +1,9 @@
 #!/bin/bash
 set -o xtrace
 
-CLUSTER_NAME="${cluster_name}"
-CLUSTER_ENDPOINT="${cluster_endpoint}"
-CLUSTER_CA="${cluster_ca}"
+CLUSTER_NAME="${CLUSTER_NAME}"
+CLUSTER_ENDPOINT="${CLUSTER_ENDPOINT}"
+CLUSTER_CA="${CLUSTER_CA}"
 
 # Bootstrap EKS node
 /etc/eks/bootstrap.sh $CLUSTER_NAME \
