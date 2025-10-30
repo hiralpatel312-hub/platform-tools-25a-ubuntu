@@ -15,13 +15,12 @@ resource "aws_launch_template" "nodes_lt" {
     name = aws_iam_instance_profile.node_profile.name
   }
 
- user_data = base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
-  CLUSTER_NAME        = aws_eks_cluster.cluster.name
-  CLUSTER_ENDPOINT    = aws_eks_cluster.cluster.endpoint
-  CLUSTER_CA          = aws_eks_cluster.cluster.certificate_authority[0].data
-  AWS_DEFAULT_REGION  = var.aws_region
-}))
-
+  user_data = base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
+    CLUSTER_NAME       = aws_eks_cluster.cluster.name
+    CLUSTER_ENDPOINT   = aws_eks_cluster.cluster.endpoint
+    CLUSTER_CA         = aws_eks_cluster.cluster.certificate_authority[0].data
+    AWS_DEFAULT_REGION = var.aws_region
+  }))
 
   lifecycle {
     create_before_destroy = true
@@ -50,6 +49,7 @@ resource "aws_autoscaling_group" "nodes_asg" {
     create_before_destroy = true
   }
 }
+
 
 #########################################
 # Security Groups

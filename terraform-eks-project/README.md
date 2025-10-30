@@ -1,4 +1,5 @@
 🚀 Amazon EKS Cluster Deployment with Terraform and GitHub Actions
+
 📘 Purpose
 
 This project provisions an Amazon EKS (Elastic Kubernetes Service) cluster inside a newly created VPC, following modular Terraform architecture and GitOps best practices via GitHub Actions.
