@@ -51,40 +51,37 @@ resource "aws_autoscaling_group" "nodes_asg" {
 # Security Group Rules for Worker Nodes
 #########################################
 
+ # Security group for EKS cluster
+resource "aws_security_group" "eks_cluster_sg" {
+  name        = "${var.project_name}-${var.environment}-sg"
+  vpc_id      = var.vpc_id
+  description = "EKS cluster security group"
+}
+
+# Worker node security group
 resource "aws_security_group" "eks_worker_sg" {
-  name   = "${var.cluster_name}-worker-sg"
-  vpc_id = var.vpc_id
-}
-# Node-to-node
-resource "aws_security_group_rule" "worker_to_worker" {
-  type                     = "ingress"
-  from_port                = 0
-  to_port                  = 65535
-  protocol                 = "-1"
-  source_security_group_id = aws_security_group.eks_worker_sg.id
-  security_group_id        = aws_security_group.eks_worker_sg.id
+  name        = "${var.project_name}-${var.environment}-worker-sg"
+  vpc_id      = var.vpc_id
 }
 
-# Control plane to worker Kubelet
-resource "aws_security_group_rule" "control_plane_to_workers" {
-  type                     = "ingress"
-  from_port                = 10250
-  to_port                  = 10250
-  protocol                 = "tcp"
-  source_security_group_id = var.cluster_security_group_id
-  security_group_id        = aws_security_group.eks_worker_sg.id
-}
-
-# Control plane HTTPS
-resource "aws_security_group_rule" "control_plane_to_worker_https" {
+# Allow cluster to communicate with worker nodes
+resource "aws_security_group_rule" "cluster_to_worker_https" {
   type                     = "ingress"
   from_port                = 443
   to_port                  = 443
   protocol                 = "tcp"
-  source_security_group_id = var.cluster_security_group_id
   security_group_id        = aws_security_group.eks_worker_sg.id
+  source_security_group_id = aws_security_group.eks_cluster_sg.id
 }
 
+resource "aws_security_group_rule" "worker_to_cluster" {
+  type                     = "egress"
+  from_port                = 0
+  to_port                  = 0
+  protocol                 = "-1"
+  security_group_id        = aws_security_group.eks_worker_sg.id
+  source_security_group_id = aws_security_group.eks_cluster_sg.id
+}
 # Worker egress
 resource "aws_security_group_rule" "worker_egress" {
   type              = "egress"

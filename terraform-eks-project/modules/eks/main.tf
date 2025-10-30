@@ -7,14 +7,10 @@ resource "aws_eks_cluster" "cluster" {
   version  = var.k8s_version
 
   vpc_config {
-    subnet_ids             = var.public_subnet_ids
-    endpoint_public_access = true
+    subnet_ids              = var.public_subnet_ids
+    security_group_ids      = [aws_security_group.eks_cluster_sg.id]
+    endpoint_public_access  = true
     endpoint_private_access = false
-  }
-
-  # Authentication mode must include CONFIG_MAP for access entries
-  access_config {
-    authentication_mode = "API_AND_CONFIG_MAP"
   }
 }
 
