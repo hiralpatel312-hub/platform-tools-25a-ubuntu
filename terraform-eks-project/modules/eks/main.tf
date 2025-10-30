@@ -30,46 +30,46 @@ resource "aws_iam_openid_connect_provider" "eks" {
   thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da0afd10ebc"]
   url             = aws_eks_cluster.cluster.identity[0].oidc[0].issuer
 }
-#####################################################
-# Fetch latest compatible add-on versions for EKS
-#####################################################
+# #####################################################
+# # Fetch latest compatible add-on versions for EKS
+# #####################################################
 
-# CoreDNS
-data "aws_eks_addon_version" "coredns_latest" {
-  addon_name         = "coredns"
-  kubernetes_version = aws_eks_cluster.cluster.version
-}
+# # CoreDNS
+# data "aws_eks_addon_version" "coredns_latest" {
+#   addon_name         = "coredns"
+#   kubernetes_version = aws_eks_cluster.cluster.version
+# }
 
-# Kube-Proxy
-data "aws_eks_addon_version" "kube_proxy_latest" {
-  addon_name         = "kube-proxy"
-  kubernetes_version = aws_eks_cluster.cluster.version
-}
+# # Kube-Proxy
+# data "aws_eks_addon_version" "kube_proxy_latest" {
+#   addon_name         = "kube-proxy"
+#   kubernetes_version = aws_eks_cluster.cluster.version
+# }
 
-# EBS CSI Driver
-data "aws_eks_addon_version" "ebs_csi_latest" {
-  addon_name         = "aws-ebs-csi-driver"
-  kubernetes_version = aws_eks_cluster.cluster.version
-}
+# # EBS CSI Driver
+# data "aws_eks_addon_version" "ebs_csi_latest" {
+#   addon_name         = "aws-ebs-csi-driver"
+#   kubernetes_version = aws_eks_cluster.cluster.version
+# }
 
-#####################################################
-# Add-ons
-#####################################################
+# #####################################################
+# # Add-ons
+# #####################################################
 
-resource "aws_eks_addon" "coredns" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  addon_name    = "coredns"
-  addon_version = data.aws_eks_addon_version.coredns_latest.version
-}
+# resource "aws_eks_addon" "coredns" {
+#   cluster_name  = aws_eks_cluster.cluster.name
+#   addon_name    = "coredns"
+#   addon_version = data.aws_eks_addon_version.coredns_latest.version
+# }
 
-resource "aws_eks_addon" "kube_proxy" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  addon_name    = "kube-proxy"
-  addon_version = data.aws_eks_addon_version.kube_proxy_latest.version
-}
+# resource "aws_eks_addon" "kube_proxy" {
+#   cluster_name  = aws_eks_cluster.cluster.name
+#   addon_name    = "kube-proxy"
+#   addon_version = data.aws_eks_addon_version.kube_proxy_latest.version
+# }
 
-resource "aws_eks_addon" "ebs_csi" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  addon_name    = "aws-ebs-csi-driver"
-  addon_version = data.aws_eks_addon_version.ebs_csi_latest.version
-}
+# resource "aws_eks_addon" "ebs_csi" {
+#   cluster_name  = aws_eks_cluster.cluster.name
+#   addon_name    = "aws-ebs-csi-driver"
+#   addon_version = data.aws_eks_addon_version.ebs_csi_latest.version
+# }
