@@ -76,15 +76,4 @@ resource "aws_route_table_association" "public_assoc" {
   route_table_id = aws_route_table.public.id
 }
 
-# Worker Security Group
-resource "aws_security_group" "eks_worker_sg" {
-  name        = "${var.project_name}-${var.environment}-worker-sg"
-  vpc_id      = aws_vpc.this.id
-  description = "Security group for EKS worker nodes"
-}
 
-# Cluster Security Group
-resource "aws_security_group" "eks_cluster_sg" {
-  name   = "${var.project_name}-${var.environment}-cluster-sg"
-  vpc_id = aws_vpc.this.id
-}

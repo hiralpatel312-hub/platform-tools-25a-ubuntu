@@ -50,6 +50,11 @@ resource "aws_autoscaling_group" "nodes_asg" {
 #########################################
 # Security Group Rules for Worker Nodes
 #########################################
+
+resource "aws_security_group" "eks_worker_sg" {
+  name   = "${var.cluster_name}-worker-sg"
+  vpc_id = var.vpc_id
+}
 # Node-to-node
 resource "aws_security_group_rule" "worker_to_worker" {
   type                     = "ingress"

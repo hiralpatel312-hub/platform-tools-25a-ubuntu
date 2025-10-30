@@ -54,3 +54,7 @@ variable "github_runner_terraform_role_arn" {
 variable "github_runner_ci_role_arn" {
   type = string
 }
+variable "node_role_arn" {
+  type        = string
+  description = "IAM Role ARN for EKS worker nodes"
+}
