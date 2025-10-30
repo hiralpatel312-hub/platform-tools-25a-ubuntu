@@ -1,7 +1,4 @@
-resource "time_sleep" "wait_for_cluster" {
-  create_duration = "300s"
-  depends_on      = [aws_eks_cluster.cluster]
-}
+
 
 # SSO Admin
 resource "aws_eks_access_entry" "sso_admin" {
