@@ -1,7 +1,7 @@
-resource "aws_iam_instance_profile" "node_profile" {
-  name = "${var.project_name}-${var.environment}-node-profile"
-  role = aws_iam_role.node_role.name
-}
+# resource "aws_iam_instance_profile" "node_profile" {
+#   name = "${var.project_name}-${var.environment}-node-profile"
+#   role = aws_iam_role.node_role.name
+# }
 data "aws_ssm_parameter" "eks_ami" {
   name = "/aws/service/eks/optimized-ami/${var.k8s_version}/amazon-linux-2/recommended/image_id"
 }
