@@ -2,10 +2,6 @@
 # Worker Nodes - Launch Template & ASG
 #########################################
 
-data "aws_ssm_parameter" "eks_ami" {
-  name = "/aws/service/eks/optimized-ami/${var.k8s_version}/amazon-linux-2/recommended/image_id"
-}
-
 resource "aws_launch_template" "nodes_lt" {
   name_prefix   = "${var.project_name}-${var.environment}-lt-"
   image_id      = data.aws_ssm_parameter.eks_ami.value
@@ -16,10 +12,10 @@ resource "aws_launch_template" "nodes_lt" {
   }
 
   user_data = base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
-    CLUSTER_NAME       = aws_eks_cluster.cluster.name
-    CLUSTER_ENDPOINT   = aws_eks_cluster.cluster.endpoint
-    CLUSTER_CA         = aws_eks_cluster.cluster.certificate_authority[0].data
-    AWS_DEFAULT_REGION = var.aws_region
+    CLUSTER_NAME     = aws_eks_cluster.cluster.name
+    CLUSTER_ENDPOINT = aws_eks_cluster.cluster.endpoint
+    CLUSTER_CA       = aws_eks_cluster.cluster.certificate_authority[0].data
+    AWS_DEFAULT_REGION = var.aws_region         # ← must pass region to bootstrap
   }))
 
   lifecycle {
@@ -27,12 +23,13 @@ resource "aws_launch_template" "nodes_lt" {
   }
 }
 
+
 resource "aws_autoscaling_group" "nodes_asg" {
   name                = "${var.project_name}-${var.environment}-nodes-asg"
   max_size            = var.max_size
   min_size            = var.min_size
   desired_capacity    = var.desired_capacity
-  vpc_zone_identifier = var.private_subnet_ids
+  vpc_zone_identifier = var.public_subnet_ids
 
   launch_template {
     id      = aws_launch_template.nodes_lt.id
