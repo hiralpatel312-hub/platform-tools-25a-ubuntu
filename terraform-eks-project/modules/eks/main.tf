@@ -34,30 +34,39 @@ resource "aws_iam_openid_connect_provider" "eks" {
 # EKS Add-Ons
 #################################################
 
-# CoreDNS
-resource "aws_eks_addon" "coredns" {
-  cluster_name   = aws_eks_cluster.cluster.name
-  addon_name     = "coredns"
-  addon_version  = "v1.11.4-eksbuild.2"  # pin to a valid semantic version
-}
-
-# VPC CNI
 resource "aws_eks_addon" "vpc_cni" {
-  cluster_name   = aws_eks_cluster.cluster.name
-  addon_name     = "vpc-cni"
-  addon_version  = "v1.13.0-eksbuild.1"  # replace with supported version for your EKS
+  cluster_name  = aws_eks_cluster.cluster.name
+  addon_name    = "vpc-cni"
+  addon_version = "v1.20.4-eksbuild.1"   # Supported version for k8s 1.32
+  tags = {
+    Environment = var.environment
+  }
 }
 
-# Kube-Proxy
+resource "aws_eks_addon" "coredns" {
+  cluster_name  = aws_eks_cluster.cluster.name
+  addon_name    = "coredns"
+  addon_version = "v1.11.4-eksbuild.2"   # Supported version for k8s 1.32
+  tags = {
+    Environment = var.environment
+  }
+}
+
 resource "aws_eks_addon" "kube_proxy" {
-  cluster_name   = aws_eks_cluster.cluster.name
-  addon_name     = "kube-proxy"
-  addon_version  = "v1.32.9-eksbuild.1"  # match your cluster version
+  cluster_name  = aws_eks_cluster.cluster.name
+  addon_name    = "kube-proxy"
+  addon_version = "v1.32.9-eksbuild.1"   # Supported version for k8s 1.32
+  tags = {
+    Environment = var.environment
+  }
 }
 
-# EBS CSI Driver
 resource "aws_eks_addon" "ebs_csi" {
-  cluster_name   = aws_eks_cluster.cluster.name
-  addon_name     = "aws-ebs-csi-driver"
-  addon_version  = "v1.51.1-eksbuild.1"
+  cluster_name  = aws_eks_cluster.cluster.name
+  addon_name    = "aws-ebs-csi-driver"
+  addon_version = "v1.51.1-eksbuild.1"   # Supported version for k8s 1.32
+  tags = {
+    Environment = var.environment
+  }
 }
+
