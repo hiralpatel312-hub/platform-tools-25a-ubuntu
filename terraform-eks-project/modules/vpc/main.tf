@@ -75,31 +75,3 @@ resource "aws_route_table_association" "public_assoc" {
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
-
-# Security Group for EKS workers
-resource "aws_security_group" "eks_worker_sg" {
-  name        = "${var.project_name}-${var.environment}-eks-workers-sg"
-  description = "EKS worker nodes SG"
-  vpc_id      = aws_vpc.this.id
-
-  # Allow all outbound
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = { Name = "${var.project_name}-${var.environment}-eks-workers-sg" }
-}
-
-# Self-referencing ingress for node-to-node communication
-resource "aws_security_group_rule" "node_internal" {
-  type                     = "ingress"
-  from_port                = 1025
-  to_port                  = 65535
-  protocol                 = "tcp"
-  security_group_id         = aws_security_group.eks_worker_sg.id
-  source_security_group_id = aws_security_group.eks_worker_sg.id
-  description              = "Node-to-node communication"
-}
