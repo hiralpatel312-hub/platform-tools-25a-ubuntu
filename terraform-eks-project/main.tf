@@ -13,22 +13,19 @@ module "vpc" {
 }
 
 module "eks" {
-  source       = "./modules/eks"
-  project_name = var.project_name
-  vpc_id = module.vpc.vpc_id
-  environment  = var.environment
-  cluster_security_group_id = module.eks_cluster.cluster_security_group_id
-  k8s_version  = var.k8s_version
-  cluster_name   = var.cluster_name
-  public_subnet_ids  = module.vpc.public_subnet_ids
-  private_subnet_ids = module.vpc.private_subnet_ids
-  worker_sg_id       = module.vpc.eks_worker_sg_id
-  ec2_instance_types = var.ec2_instance_types
-  desired_capacity   = var.desired_capacity
-  aws_auth_ready = true 
-  min_size           = var.min_size
-  max_size           = var.max_size
-  sso_admin_role_arn                 = var.sso_admin_role_arn
-  github_runner_ci_role_arn          = var.github_runner_ci_role_arn
-  github_runner_terraform_role_arn   = var.github_runner_terraform_role_arn
+  source              = "./modules/eks"
+  project_name        = var.project_name
+  environment         = var.environment
+  cluster_name        = var.cluster_name
+  public_subnet_ids   = module.vpc.public_subnet_ids
+  private_subnet_ids  = module.vpc.private_subnet_ids
+  ec2_instance_types  = var.ec2_instance_types
+  desired_capacity    = var.desired_capacity
+  min_size            = var.min_size
+  max_size            = var.max_size
+  sso_admin_role_arn  = var.sso_admin_role_arn
+  github_runner_terraform_role_arn = var.github_runner_terraform_role_arn
+  vpc_id                         = module.vpc.vpc_id
+  k8s_version                    = var.k8s_version
+  aws_region                     = var.aws_region
 }

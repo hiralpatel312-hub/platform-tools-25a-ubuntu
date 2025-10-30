@@ -1,13 +1,9 @@
-output "cluster_name" {
+ output "cluster_name" {
   value = aws_eks_cluster.cluster.name
 }
 
 output "cluster_endpoint" {
   value = aws_eks_cluster.cluster.endpoint
-}
-
-output "node_asg_name" {
-  value = aws_autoscaling_group.nodes_asg.name
 }
 
 output "cluster_ca_certificate" {
@@ -16,4 +12,8 @@ output "cluster_ca_certificate" {
 
 output "node_role_arn" {
   value = aws_iam_role.node_role.arn
+}
+
+output "worker_sg_id" {
+  value = aws_security_group.eks_worker_sg.id
 }

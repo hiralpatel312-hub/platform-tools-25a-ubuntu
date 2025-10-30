@@ -2,7 +2,6 @@ resource "aws_iam_instance_profile" "node_profile" {
   name = "${var.project_name}-${var.environment}-node-profile"
   role = aws_iam_role.node_role.name
 }
-
 data "aws_ssm_parameter" "eks_ami" {
   name = "/aws/service/eks/optimized-ami/${var.k8s_version}/amazon-linux-2/recommended/image_id"
 }
@@ -17,7 +16,9 @@ resource "aws_launch_template" "nodes_lt" {
   }
 
   user_data = base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
-    cluster_name = var.cluster_name
+    cluster_name    = var.cluster_name
+    cluster_endpoint = module.eks.cluster_endpoint
+    cluster_ca       = module.eks.cluster_ca_certificate
   }))
 
   lifecycle {
@@ -45,20 +46,16 @@ resource "aws_autoscaling_group" "nodes_asg" {
   lifecycle {
     create_before_destroy = true
   }
-
-  # Ensure aws-auth is applied first
-  depends_on = [kubernetes_config_map.aws_auth]
-
 }
-# Worker node security group
 resource "aws_security_group" "eks_worker_sg" {
-  name        = "${var.cluster_name}-worker-sg"
-  description = "Security group for EKS worker nodes"
+  name   = "${var.cluster_name}-worker-sg"
   vpc_id = var.vpc_id
-
+  tags = {
+    Name = "${var.cluster_name}-worker-sg"
+  }
 }
 
-# Allow worker nodes to communicate with each other
+# Node-to-node traffic
 resource "aws_security_group_rule" "worker_to_worker" {
   type                     = "ingress"
   from_port                = 0
@@ -66,10 +63,9 @@ resource "aws_security_group_rule" "worker_to_worker" {
   protocol                 = "-1"
   source_security_group_id = aws_security_group.eks_worker_sg.id
   security_group_id        = aws_security_group.eks_worker_sg.id
-  description              = "Allow node-to-node traffic (all protocols)"
 }
 
-# Allow inbound traffic from control plane to worker nodes (Kubelet, HTTPS)
+# Control plane to worker Kubelet
 resource "aws_security_group_rule" "control_plane_to_workers" {
   type                     = "ingress"
   from_port                = 10250
@@ -77,9 +73,9 @@ resource "aws_security_group_rule" "control_plane_to_workers" {
   protocol                 = "tcp"
   security_group_id        = aws_security_group.eks_worker_sg.id
   source_security_group_id = aws_security_group.eks_cluster_sg.id
-  description              = "Allow control plane to communicate with Kubelet"
 }
 
+# Control plane to worker HTTPS
 resource "aws_security_group_rule" "control_plane_to_worker_https" {
   type                     = "ingress"
   from_port                = 443
@@ -87,10 +83,9 @@ resource "aws_security_group_rule" "control_plane_to_worker_https" {
   protocol                 = "tcp"
   security_group_id        = aws_security_group.eks_worker_sg.id
   source_security_group_id = aws_security_group.eks_cluster_sg.id
-  description              = "Allow control plane HTTPS to workers"
 }
 
-# Allow all egress traffic from workers
+# Allow all egress traffic
 resource "aws_security_group_rule" "worker_egress" {
   type              = "egress"
   from_port         = 0
