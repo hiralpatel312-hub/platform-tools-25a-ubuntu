@@ -1,6 +1,11 @@
-# Cluster Role
+#########################################
+# IAM Roles
+#########################################
+
+# EKS Cluster Role
 resource "aws_iam_role" "cluster_role" {
-  name = "${var.cluster_name}-cluster-role"
+  name = "${var.project_name}-${var.environment}-cluster-role"
+
   assume_role_policy = data.aws_iam_policy_document.cluster_assume_role.json
 }
 
@@ -8,20 +13,21 @@ data "aws_iam_policy_document" "cluster_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = ["eks.amazonaws.com"]
     }
   }
 }
 
 resource "aws_iam_role_policy_attachment" "cluster_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.cluster_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
 # Worker Node Role
 resource "aws_iam_role" "node_role" {
-  name = "${var.cluster_name}-node-role"
+  name = "${var.project_name}-${var.environment}-node-role"
+
   assume_role_policy = data.aws_iam_policy_document.node_assume_role.json
 }
 
@@ -29,7 +35,7 @@ data "aws_iam_policy_document" "node_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = ["ec2.amazonaws.com"]
     }
   }
@@ -51,6 +57,6 @@ resource "aws_iam_role_policy_attachment" "worker_ecr_readonly" {
 }
 
 resource "aws_iam_instance_profile" "node_profile" {
-  name = "${var.cluster_name}-node-profile"
+  name = "${var.project_name}-${var.environment}-node-profile"
   role = aws_iam_role.node_role.name
 }

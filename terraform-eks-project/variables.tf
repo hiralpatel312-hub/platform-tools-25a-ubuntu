@@ -9,19 +9,19 @@ variable "environment" {
 }
 
 variable "aws_region" {
-  type    = string
+  type = string
 }
 
 variable "vpc_cidr" {
-  type    = string
+  type = string
 }
 
 variable "k8s_version" {
-  type    = string
+  type = string
 }
 
 variable "ec2_instance_types" {
-  type    = list(string)
+  type = list(string)
 }
 
 variable "desired_capacity" {
@@ -38,29 +38,19 @@ variable "max_size" {
   type    = number
   default = 5
 }
-variable "sso_admin_role_arn" {
-  type        = string
-  description = "AWS SSO Administrator IAM role for cluster admin access"
+
+variable "cluster_name" {
+  type = string
 }
 
-variable "github_runner_ci_role_arn" {
-  type        = string
-  description = "GitHub Runner IAM role for CI/CD jobs"
+variable "sso_admin_role_arn" {
+  type = string
 }
 
 variable "github_runner_terraform_role_arn" {
-  type        = string
-  description = "GitHub Runner IAM role for Terraform automation"
+  type = string
 }
-variable "cluster_name" {
-  type        = string
-  description = "EKS Cluster name"
-}
-variable "node_role_arn" {
-  type        = string
-  description = "IAM Role ARN for EKS Worker Nodes"
-}
-variable "vpc_id" {}
-variable "public_subnet_ids" {
-  type = list(string)
+
+variable "github_runner_ci_role_arn" {
+  type = string
 }

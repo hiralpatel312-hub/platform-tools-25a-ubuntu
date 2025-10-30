@@ -3,7 +3,7 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-# Create VPC
+# VPC
 resource "aws_vpc" "this" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -23,7 +23,7 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
-# Public subnets (3)
+# Public subnets
 resource "aws_subnet" "public" {
   count                   = 3
   vpc_id                  = aws_vpc.this.id
@@ -34,11 +34,11 @@ resource "aws_subnet" "public" {
   tags = {
     Name                                  = "${var.project_name}-${var.environment}-public-${count.index + 1}"
     "kubernetes.io/cluster/${var.project_name}-${var.environment}" = "shared"
-    "kubernetes.io/role/elb"              = 1
+    "kubernetes.io/role/elb" = "1"
   }
 }
 
-# Private subnets (3)
+# Private subnets
 resource "aws_subnet" "private" {
   count             = 3
   vpc_id            = aws_vpc.this.id
@@ -47,9 +47,9 @@ resource "aws_subnet" "private" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name                                     = "${var.project_name}-${var.environment}-private-${count.index + 1}"
+    Name = "${var.project_name}-${var.environment}-private-${count.index + 1}"
     "kubernetes.io/cluster/${var.project_name}-${var.environment}" = "shared"
-    "kubernetes.io/role/internal-elb"       = 1
+    "kubernetes.io/role/internal-elb" = "1"
   }
 }
 
@@ -62,16 +62,29 @@ resource "aws_route_table" "public" {
   }
 }
 
-# Public route to IGW
+# Route from public subnets to IGW
 resource "aws_route" "public_internet" {
   route_table_id         = aws_route_table.public.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.igw.id
 }
 
-# Associate public subnets with public route table
+# Associate public subnets with route table
 resource "aws_route_table_association" "public_assoc" {
   count          = length(aws_subnet.public)
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
+}
+
+# Worker Security Group
+resource "aws_security_group" "eks_worker_sg" {
+  name        = "${var.project_name}-${var.environment}-worker-sg"
+  vpc_id      = aws_vpc.this.id
+  description = "Security group for EKS worker nodes"
+}
+
+# Cluster Security Group
+resource "aws_security_group" "eks_cluster_sg" {
+  name   = "${var.project_name}-${var.environment}-cluster-sg"
+  vpc_id = aws_vpc.this.id
 }

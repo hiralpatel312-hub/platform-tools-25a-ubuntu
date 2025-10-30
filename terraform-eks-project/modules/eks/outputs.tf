@@ -1,4 +1,4 @@
- output "cluster_name" {
+output "cluster_name" {
   value = aws_eks_cluster.cluster.name
 }
 
@@ -14,6 +14,6 @@ output "node_role_arn" {
   value = aws_iam_role.node_role.arn
 }
 
-output "worker_sg_id" {
-  value = aws_security_group.eks_worker_sg.id
+output "worker_asg_name" {
+  value = aws_autoscaling_group.nodes_asg.name
 }

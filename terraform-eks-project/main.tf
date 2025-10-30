@@ -2,6 +2,7 @@ data "aws_availability_zones" "azs" {
   state = "available"
 }
 
+# VPC Module
 module "vpc" {
   source       = "./modules/vpc"
   project_name = var.project_name
@@ -12,11 +13,13 @@ module "vpc" {
   cidr_block   = var.vpc_cidr
 }
 
+# EKS Module
 module "eks" {
   source              = "./modules/eks"
   project_name        = var.project_name
   environment         = var.environment
   cluster_name        = var.cluster_name
+  k8s_version         = var.k8s_version
   public_subnet_ids   = module.vpc.public_subnet_ids
   private_subnet_ids  = module.vpc.private_subnet_ids
   ec2_instance_types  = var.ec2_instance_types
@@ -25,7 +28,7 @@ module "eks" {
   max_size            = var.max_size
   sso_admin_role_arn  = var.sso_admin_role_arn
   github_runner_terraform_role_arn = var.github_runner_terraform_role_arn
-  vpc_id                         = module.vpc.vpc_id
-  k8s_version                    = var.k8s_version
-  aws_region                     = var.aws_region
+  vpc_id              = module.vpc.vpc_id
+  aws_region          = var.aws_region
+  cluster_security_group_id = module.vpc.cluster_security_group_id
 }

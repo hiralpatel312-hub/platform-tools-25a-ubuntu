@@ -9,3 +9,6 @@ github_runner_ci_role_arn = "arn:aws:iam::383585068161:role/GitHubActionsTerrafo
 github_runner_terraform_role_arn = "arn:aws:iam::383585068161:role/GitHubActionsTerraformIAMrole"
 sso_admin_role_arn = "arn:aws:iam::383585068161:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_Administrator_a72305569e9173dc"
 node_role_arn = "arn:aws:iam::383585068161:instance-profile/eks-cluster-dev-node-role"
+desired_capacity      = 3
+min_size              = 1
+max_size              = 5

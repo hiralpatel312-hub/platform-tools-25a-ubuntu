@@ -1,7 +1,6 @@
-# resource "aws_iam_instance_profile" "node_profile" {
-#   name = "${var.project_name}-${var.environment}-node-profile"
-#   role = aws_iam_role.node_role.name
-# }
+#########################################
+# Worker Nodes - Launch Template & ASG
+#########################################
 data "aws_ssm_parameter" "eks_ami" {
   name = "/aws/service/eks/optimized-ami/${var.k8s_version}/amazon-linux-2/recommended/image_id"
 }
@@ -16,15 +15,16 @@ resource "aws_launch_template" "nodes_lt" {
   }
 
   user_data = base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
-    cluster_name    = var.cluster_name
-    cluster_endpoint = module.eks.cluster_endpoint
-    cluster_ca       = module.eks.cluster_ca_certificate
+    cluster_name       = var.cluster_name
+    cluster_endpoint   = aws_eks_cluster.cluster.endpoint
+    cluster_ca         = aws_eks_cluster.cluster.certificate_authority[0].data
   }))
 
   lifecycle {
     create_before_destroy = true
   }
 }
+
 resource "aws_autoscaling_group" "nodes_asg" {
   name                = "${var.project_name}-${var.environment}-nodes-asg"
   max_size            = var.max_size
@@ -47,15 +47,10 @@ resource "aws_autoscaling_group" "nodes_asg" {
     create_before_destroy = true
   }
 }
-resource "aws_security_group" "eks_worker_sg" {
-  name   = "${var.cluster_name}-worker-sg"
-  vpc_id = var.vpc_id
-  tags = {
-    Name = "${var.cluster_name}-worker-sg"
-  }
-}
-
-# Node-to-node traffic
+#########################################
+# Security Group Rules for Worker Nodes
+#########################################
+# Node-to-node
 resource "aws_security_group_rule" "worker_to_worker" {
   type                     = "ingress"
   from_port                = 0
@@ -71,21 +66,21 @@ resource "aws_security_group_rule" "control_plane_to_workers" {
   from_port                = 10250
   to_port                  = 10250
   protocol                 = "tcp"
+  source_security_group_id = var.cluster_security_group_id
   security_group_id        = aws_security_group.eks_worker_sg.id
-  source_security_group_id = aws_security_group.eks_cluster_sg.id
 }
 
-# Control plane to worker HTTPS
+# Control plane HTTPS
 resource "aws_security_group_rule" "control_plane_to_worker_https" {
   type                     = "ingress"
   from_port                = 443
   to_port                  = 443
   protocol                 = "tcp"
+  source_security_group_id = var.cluster_security_group_id
   security_group_id        = aws_security_group.eks_worker_sg.id
-  source_security_group_id = aws_security_group.eks_cluster_sg.id
 }
 
-# Allow all egress traffic
+# Worker egress
 resource "aws_security_group_rule" "worker_egress" {
   type              = "egress"
   from_port         = 0
