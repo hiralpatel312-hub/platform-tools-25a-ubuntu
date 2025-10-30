@@ -27,7 +27,7 @@ module "eks" {
   max_size            = var.max_size
   sso_admin_role_arn  = var.sso_admin_role_arn
   github_runner_terraform_role_arn = var.github_runner_terraform_role_arn
-  cluster_security_group_id        = module.vpc.cluster_security_group_id
+  cluster_security_group_id = module.eks.cluster_sg_id
   vpc_id              = module.vpc.vpc_id
   aws_region          = var.aws_region
 }
