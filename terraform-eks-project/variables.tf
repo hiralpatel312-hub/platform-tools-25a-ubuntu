@@ -60,3 +60,7 @@ variable "node_role_arn" {
   type        = string
   description = "IAM Role ARN for EKS Worker Nodes"
 }
+variable "vpc_id" {}
+variable "public_subnet_ids" {
+  type = list(string)
+}

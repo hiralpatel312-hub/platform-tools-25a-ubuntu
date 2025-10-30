@@ -68,3 +68,7 @@ variable "github_runner_terraform_role_arn" {
 variable "aws_auth_ready" {
   type = bool
 }
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID where EKS cluster is deployed"
+}

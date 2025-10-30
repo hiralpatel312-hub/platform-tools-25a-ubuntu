@@ -53,7 +53,8 @@ resource "aws_autoscaling_group" "nodes_asg" {
 resource "aws_security_group" "eks_worker_sg" {
   name        = "${var.cluster_name}-worker-sg"
   description = "Security group for EKS worker nodes"
-  vpc_id      = aws_vpc.main.id
+  vpc_id = var.vpc_id
+
 }
 
 # Allow worker nodes to communicate with each other
