@@ -13,6 +13,7 @@ resource "aws_launch_template" "nodes_lt" {
   name_prefix   = "${var.project_name}-${var.environment}-lt-"
   image_id      = data.aws_ssm_parameter.eks_ami.value
   instance_type = element(var.ec2_instance_types, 0)
+    key_name      = "linuxkey"
 
   iam_instance_profile {
     name = aws_iam_instance_profile.node_profile.name
