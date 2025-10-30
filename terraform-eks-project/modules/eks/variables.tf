@@ -31,6 +31,10 @@ variable "worker_sg_id" {
   type        = string
   description = "Security Group ID for worker nodes"
 }
+variable "cluster_security_group_id" {
+  type        = string
+  description = "Security group ID for EKS control plane"
+}
 
 variable "ec2_instance_types" {
   type        = list(string)
