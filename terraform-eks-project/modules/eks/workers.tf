@@ -56,9 +56,9 @@ resource "aws_autoscaling_group" "nodes_asg" {
 }
 
 
-#########################################
+########################################
 # Security Groups
-#########################################
+########################################
 
 # Cluster SG
 resource "aws_security_group" "eks_cluster_sg" {
