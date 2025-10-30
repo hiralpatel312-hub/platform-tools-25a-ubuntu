@@ -1,4 +1,11 @@
 #########################################
+# Get the latest EKS optimized AMI
+#########################################
+data "aws_ssm_parameter" "eks_ami" {
+  name = "/aws/service/eks/optimized-ami/${var.k8s_version}/amazon-linux-2/recommended/image_id"
+}
+
+#########################################
 # Worker Nodes - Launch Template & ASG
 #########################################
 
