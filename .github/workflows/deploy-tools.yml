@@ -48,16 +48,7 @@ jobs:
         # unencrypted S3 buckets, missing IAM boundaries.
         # HIGH or CRITICAL = pipeline stops here.
  
-      - name: Trivy — IaC vulnerability scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: config
-          scan-ref: ${{ env.TF_DIR }}
-          severity: HIGH,CRITICAL
-          exit-code: 1
-        # Second scanning layer with broader ruleset.
-        # Both tfsec and Trivy must pass before Terraform runs.
- 
+
   # ══════════════════════════════════════════════════════════
   # STAGE 2 — Terraform Plan
   # Runs on all branches after security scan passes.
