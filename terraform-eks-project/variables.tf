@@ -58,11 +58,6 @@ variable "cluster_name" {
   description = "EKS cluster name"
 }
 
-variable "sso_admin_role_arn" {
-  type        = string
-  description = "SSO Admin role ARN"
-}
-
 variable "github_runner_terraform_role_arn" {
   type        = string
   description = "GitHub Runner Terraform role ARN"
