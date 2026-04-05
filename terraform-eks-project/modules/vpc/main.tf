@@ -37,6 +37,38 @@ resource "aws_subnet" "public" {
     "kubernetes.io/role/elb" = "1"
   }
 }
+# ─────────────────────────────────────────────
+# NAT Gateway (allows private subnet nodes to
+# reach the internet for ECR, S3, AWS APIs)
+# ─────────────────────────────────────────────
+# ADDED: your original had no NAT Gateway. Without it, nodes in private
+# subnets cannot pull container images from ECR, reach the EKS API, or
+# download OS packages. This is why the EBS CSI addon showed DEGRADED —
+# its pods were scheduled but couldn't pull their images.
+
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-nat-eip"
+    Environment = var.environment
+  }
+}
+
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public[0].id
+  # NAT Gateway sits in one public subnet. All private subnets route
+  # outbound traffic through it. One NAT Gateway is enough for dev/demo.
+  # In production use one per AZ for high availability.
+
+  depends_on = [aws_internet_gateway.igw]
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-nat"
+    Environment = var.environment
+  }
+}
 
 # Private subnets
 resource "aws_subnet" "private" {
@@ -76,4 +108,24 @@ resource "aws_route_table_association" "public_assoc" {
   route_table_id = aws_route_table.public.id
 }
 
+# Private Route Table
 
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.this.id
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-private-rt"
+    Environment = var.environment
+  }
+}
+resource "aws_route" "private_nat" {
+  route_table_id         = aws_route_table.private.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat.id
+}
+
+resource "aws_route_table_association" "private" {
+  count          = length(aws_subnet.private)
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private.id
+}
