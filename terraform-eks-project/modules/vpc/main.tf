@@ -25,17 +25,17 @@ resource "aws_internet_gateway" "igw" {
 
 # Public subnets
 resource "aws_subnet" "public" {
-  count                   = 3
-  vpc_id                  = aws_vpc.this.id
-  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
-  
+  count             = 3
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index)
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+
   map_public_ip_on_launch = true
 
   tags = {
-    Name                                  = "${var.project_name}-${var.environment}-public-${count.index + 1}"
+    Name                                                           = "${var.project_name}-${var.environment}-public-${count.index + 1}"
     "kubernetes.io/cluster/${var.project_name}-${var.environment}" = "shared"
-    "kubernetes.io/role/elb" = "1"
+    "kubernetes.io/role/elb"                                       = "1"
   }
 }
 # ─────────────────────────────────────────────
@@ -73,16 +73,16 @@ resource "aws_nat_gateway" "nat" {
 
 # Private subnets
 resource "aws_subnet" "private" {
-  count             = 3
-  vpc_id            = aws_vpc.this.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 3)
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  count                   = 3
+  vpc_id                  = aws_vpc.this.id
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index + 3)
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-${count.index + 1}"
+    Name                                                           = "${var.project_name}-${var.environment}-private-${count.index + 1}"
     "kubernetes.io/cluster/${var.project_name}-${var.environment}" = "shared"
-    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/role/internal-elb"                              = "1"
   }
 }
 

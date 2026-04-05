@@ -7,7 +7,7 @@ resource "aws_eks_cluster" "cluster" {
   version  = var.k8s_version
 
   vpc_config {
-     subnet_ids = concat(
+    subnet_ids = concat(
       var.private_subnet_ids, # nodes live in private subnets
       var.public_subnet_ids   # control plane needs both for multi-AZ
     )
@@ -28,7 +28,7 @@ resource "aws_eks_cluster" "cluster" {
 # ------------------------------
 resource "time_sleep" "wait_for_cluster" {
   depends_on      = [aws_eks_cluster.cluster]
-  create_duration = "300s"  # min to ensure cluster is ready
+  create_duration = "300s" # min to ensure cluster is ready
 }
 
 # ------------------------------
@@ -55,8 +55,8 @@ resource "aws_iam_openid_connect_provider" "eks" {
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name  = aws_eks_cluster.cluster.name
   addon_name    = "vpc-cni"
-  addon_version = "v1.20.4-eksbuild.1"   # Supported version for k8s 1.32
-   depends_on = [ time_sleep.wait_for_cluster ]
+  addon_version = "v1.20.4-eksbuild.1" # Supported version for k8s 1.32
+  depends_on    = [time_sleep.wait_for_cluster]
   tags = {
     Environment = var.environment
   }
@@ -64,8 +64,8 @@ resource "aws_eks_addon" "vpc_cni" {
 resource "aws_eks_addon" "kube_proxy" {
   cluster_name  = aws_eks_cluster.cluster.name
   addon_name    = "kube-proxy"
-  addon_version = "v1.32.9-eksbuild.1"   # Supported version for k8s 1.32
-    depends_on = [ time_sleep.wait_for_cluster, aws_eks_addon.vpc_cni ]
+  addon_version = "v1.32.9-eksbuild.1" # Supported version for k8s 1.32
+  depends_on    = [time_sleep.wait_for_cluster, aws_eks_addon.vpc_cni]
   tags = {
     Environment = var.environment
   }
@@ -74,8 +74,8 @@ resource "aws_eks_addon" "kube_proxy" {
 resource "aws_eks_addon" "coredns" {
   cluster_name  = aws_eks_cluster.cluster.name
   addon_name    = "coredns"
-  addon_version = "v1.11.4-eksbuild.2"   # Supported version for k8s 1.32
-    depends_on = [ time_sleep.wait_for_cluster, aws_eks_addon.vpc_cni, aws_autoscaling_group.nodes_asg ] 
+  addon_version = "v1.11.4-eksbuild.2" # Supported version for k8s 1.32
+  depends_on    = [time_sleep.wait_for_cluster, aws_eks_addon.vpc_cni, aws_autoscaling_group.nodes_asg]
   tags = {
     Environment = var.environment
   }
@@ -83,15 +83,15 @@ resource "aws_eks_addon" "coredns" {
 
 
 resource "aws_eks_addon" "ebs_csi" {
-  cluster_name  = aws_eks_cluster.cluster.name
-  addon_name    = "aws-ebs-csi-driver"
-  addon_version = "v1.51.1-eksbuild.1"   # Supported version for k8s 1.32
+  cluster_name             = aws_eks_cluster.cluster.name
+  addon_name               = "aws-ebs-csi-driver"
+  addon_version            = "v1.51.1-eksbuild.1" # Supported version for k8s 1.32
   service_account_role_arn = aws_iam_role.ebs_csi_role.arn
-    depends_on = [ time_sleep.wait_for_cluster,
+  depends_on = [time_sleep.wait_for_cluster,
     aws_eks_addon.vpc_cni,
     aws_autoscaling_group.nodes_asg,
     aws_iam_openid_connect_provider.eks,
-    aws_iam_role_policy_attachment.ebs_csi_policy ]
+  aws_iam_role_policy_attachment.ebs_csi_policy]
   tags = {
     Environment = var.environment
   }

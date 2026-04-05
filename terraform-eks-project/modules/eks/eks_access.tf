@@ -3,8 +3,8 @@
 resource "aws_eks_access_entry" "github_runner" {
   cluster_name  = aws_eks_cluster.cluster.name
   principal_arn = var.github_runner_terraform_role_arn
-  type = "STANDARD"
-  depends_on = [time_sleep.wait_for_cluster]
+  type          = "STANDARD"
+  depends_on    = [time_sleep.wait_for_cluster]
 }
 
 resource "aws_eks_access_policy_association" "github_runner_policy" {
