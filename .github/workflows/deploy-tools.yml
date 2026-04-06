@@ -193,7 +193,15 @@ jobs:
             --name ${{ steps.tf-outputs.outputs.cluster_name }} \
             --region ${{ env.AWS_REGION }}
           echo "Cluster is ACTIVE"
-
+          
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ steps.tf-outputs.outputs.cluster_name }} \
+            --region ${{ env.AWS_REGION }}
+      # Writes kubectl credentials to ~/.kube/config on the runner.
+      # All subsequent kubectl commands use this automatically.
+ 
       - name: Apply aws-auth ConfigMap
         run: |
           NODE_ROLE_ARN=$(aws iam get-role \
@@ -216,14 +224,7 @@ jobs:
                   - system:nodes
           EOF
           
-      - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig \
-            --name ${{ steps.tf-outputs.outputs.cluster_name }} \
-            --region ${{ env.AWS_REGION }}
-      # Writes kubectl credentials to ~/.kube/config on the runner.
-      # All subsequent kubectl commands use this automatically.
- 
+      
       - name: Wait for nodes to be Ready
         run: |
           echo "Waiting for all worker nodes to join and become Ready..."
