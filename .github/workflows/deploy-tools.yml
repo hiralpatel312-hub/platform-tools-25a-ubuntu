@@ -193,14 +193,36 @@ jobs:
             --name ${{ steps.tf-outputs.outputs.cluster_name }} \
             --region ${{ env.AWS_REGION }}
           echo "Cluster is ACTIVE"
- 
+
+      - name: Apply aws-auth ConfigMap
+        run: |
+          NODE_ROLE_ARN=$(aws iam get-role \
+            --role-name eks-cluster-dev-node-role \
+            --query 'Role.Arn' \
+            --output text)
+
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: aws-auth
+            namespace: kube-system
+          data:
+            mapRoles: |
+              - rolearn: ${NODE_ROLE_ARN}
+                username: system:node:{{EC2PrivateDNSName}}
+                groups:
+                  - system:bootstrappers
+                  - system:nodes
+          EOF
+          
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
             --name ${{ steps.tf-outputs.outputs.cluster_name }} \
             --region ${{ env.AWS_REGION }}
-        # Writes kubectl credentials to ~/.kube/config on the runner.
-        # All subsequent kubectl commands use this automatically.
+      # Writes kubectl credentials to ~/.kube/config on the runner.
+      # All subsequent kubectl commands use this automatically.
  
       - name: Wait for nodes to be Ready
         run: |
