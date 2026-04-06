@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+      # maxUnavailable: 0 — never go below desired replica count during update.
+      # maxSurge: 1 — one extra pod starts before an old one is terminated.
+      # Combined effect: zero-downtime rolling updates.
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      serviceAccountName: my-app-sa
+      # ServiceAccount maps to the IRSA role via its annotation.
+      # Pods get scoped AWS credentials — not the broad node role.
+
+      containers:
+        - name: my-app
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          # requests: guaranteed allocation used by the scheduler to place the pod.
+          # limits: maximum allowed. Exceeding memory limit = OOMKill.
+          # Exceeding CPU limit = throttled (slowed, not killed).
+          # Always set both — without them a single pod can starve all others
+          # on the node.
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # Pod only receives traffic once readiness probe passes.
+          # Prevents the rolling update from terminating the old pod
+          # before the new one is actually serving requests.
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          # Restarts the container if it becomes unhealthy.
+
+      terminationGracePeriodSeconds: 30
+      # Gives in-flight requests 30 seconds to complete before the
+      # pod is forcefully terminated. Works alongside the ALB
+      # deregistration delay to achieve truly zero-downtime deploys.

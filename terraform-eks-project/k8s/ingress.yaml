@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app-ingress
+  namespace: my-app
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # internet-facing = ALB is publicly accessible from the internet.
+    # Use "internal" for services that should only be reachable
+    # from within the VPC.
+
+    alb.ingress.kubernetes.io/target-type: ip
+    # ip mode = traffic goes directly to pod IPs via VPC CNI.
+    # More efficient than instance mode which routes through NodePort.
+
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    # For production add HTTPS:
+    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:383585068161:certificate/YOUR_CERT_ID
+    # alb.ingress.kubernetes.io/ssl-redirect: '443'
+
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-app-svc
+                port:
+                  number: 80
