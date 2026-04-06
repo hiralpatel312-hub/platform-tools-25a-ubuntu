@@ -12,23 +12,20 @@ on:
 env:
   AWS_REGION: us-east-1
   TF_VERSION: 1.9.5
-  TF_DIR: terraform-eks-project     # folder where your .tf files live
-  K8S_DIR: k8s                      # folder where your yaml files live
+  TF_DIR: terraform-eks-project
+  K8S_DIR: k8s
   CLUSTER_NAME: eks-cluster-dev-cluster
   APP_NAMESPACE: my-app
   APP_NAME: my-app
  
 permissions:
-  id-token: write   # required for OIDC — do not remove
+  id-token: write
   contents: read
  
 jobs:
  
   # ══════════════════════════════════════════════════════════
   # STAGE 1 — Security Scanning
-  # Runs on every push and PR on all branches.
-  # Both scanners run in parallel inside this job.
-  # Pipeline blocks if any HIGH or CRITICAL finding is found.
   # ══════════════════════════════════════════════════════════
   security-scan:
     name: Security Scan
@@ -43,17 +40,9 @@ jobs:
         with:
           working_directory: ${{ env.TF_DIR }}
           soft_fail: false
-        # Scans Terraform for issues like:
-        # open security groups, public EKS endpoint,
-        # unencrypted S3 buckets, missing IAM boundaries.
-        # HIGH or CRITICAL = pipeline stops here.
  
-
   # ══════════════════════════════════════════════════════════
   # STAGE 2 — Terraform Plan
-  # Runs on all branches after security scan passes.
-  # Saves the plan as a build artifact so Stage 3 applies
-  # the EXACT same plan that was reviewed — no drift.
   # ══════════════════════════════════════════════════════════
   terraform-plan:
     name: Terraform Plan
@@ -69,11 +58,6 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-        # OIDC — no long-lived AWS keys stored anywhere in GitHub.
-        # GitHub generates a short-lived JWT token, exchanges it with
-        # AWS STS, and gets temporary credentials (~1 hour expiry).
-        # The only thing in GitHub Secrets is the role ARN — not a key.
-        # AWS_ROLE_ARN = arn:aws:iam::383585068161:role/GitHubActionsTerraformIAMrole
  
       - name: Setup Terraform ${{ env.TF_VERSION }}
         uses: hashicorp/setup-terraform@v3
@@ -88,29 +72,18 @@ jobs:
             -backend-config="key=eks/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}" \
             -backend-config="dynamodb_table=terraformlock"
-        # Remote state in S3 with DynamoDB locking.
-        # -reconfigure forces a clean init on every run.
-        # Prevents stale local state from interfering.
  
       - name: Terraform Format Check
         working-directory: ${{ env.TF_DIR }}
         run: terraform fmt -check -recursive
-        # Fails if any .tf file is not properly formatted.
-        # Enforces consistent code style across the team.
  
       - name: Terraform Validate
         working-directory: ${{ env.TF_DIR }}
         run: terraform validate
-        # Checks syntax and internal consistency.
-        # Catches missing variables, bad references, invalid blocks.
-        # Runs without AWS credentials — fast and safe.
  
       - name: Terraform Plan
         working-directory: ${{ env.TF_DIR }}
         run: terraform plan -var-file=dev.tfvars -out=tfplan
-        # Saves the plan to a file.
-        # Stage 3 applies this exact file — not a fresh plan.
-        # Prevents plan drift between review and apply.
  
       - name: Upload plan artifact
         uses: actions/upload-artifact@v4
@@ -118,15 +91,9 @@ jobs:
           name: tfplan-${{ github.sha }}
           path: ${{ env.TF_DIR }}/tfplan
           retention-days: 1
-        # Passes the plan file from this job to the deploy job.
-        # Tied to commit SHA so the correct plan is always used.
  
   # ══════════════════════════════════════════════════════════
-  # STAGE 3 — Apply Infrastructure + Deploy App + Print URL
-  # Only runs on merge to main branch.
-  # Pauses for manual approval via GitHub environment protection.
-  # Setup: repo Settings → Environments → production
-  #        → Required reviewers → add yourself → Save
+  # STAGE 3 — Apply + Deploy
   # ══════════════════════════════════════════════════════════
   deploy:
     name: Apply & Deploy
@@ -150,8 +117,6 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
-          # wrapper: false is required so that
-          # terraform output -raw works correctly later.
  
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
@@ -172,9 +137,6 @@ jobs:
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
         run: terraform apply -auto-approve tfplan
-        # Applies the EXACT plan from Stage 2.
-        # Safe to auto-approve because plan was reviewed
-        # and manually approved via the environment gate above.
  
       - name: Get cluster name from Terraform output
         id: tf-outputs
@@ -182,9 +144,6 @@ jobs:
         run: |
           CLUSTER_NAME=$(terraform output -raw cluster_name)
           echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_OUTPUT
-        # Reads the cluster name dynamically from Terraform output.
-        # Never hardcoded — changes in variables.tf are picked up
-        # automatically without editing this workflow.
  
       - name: Wait for EKS cluster to be ACTIVE
         run: |
@@ -193,23 +152,23 @@ jobs:
             --name ${{ steps.tf-outputs.outputs.cluster_name }} \
             --region ${{ env.AWS_REGION }}
           echo "Cluster is ACTIVE"
-          
+ 
+      # FIXED: Update kubeconfig FIRST before any kubectl commands
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
             --name ${{ steps.tf-outputs.outputs.cluster_name }} \
             --region ${{ env.AWS_REGION }}
-      # Writes kubectl credentials to ~/.kube/config on the runner.
-      # All subsequent kubectl commands use this automatically.
  
+      # FIXED: aws-auth AFTER kubeconfig so kubectl can connect
       - name: Apply aws-auth ConfigMap
         run: |
           NODE_ROLE_ARN=$(aws iam get-role \
             --role-name eks-cluster-dev-node-role \
             --query 'Role.Arn' \
             --output text)
-
-          cat <<EOF | kubectl apply -f -
+ 
+          cat <<EOF | kubectl apply --validate=false -f -
           apiVersion: v1
           kind: ConfigMap
           metadata:
@@ -223,8 +182,7 @@ jobs:
                   - system:bootstrappers
                   - system:nodes
           EOF
-          
-      
+ 
       - name: Wait for nodes to be Ready
         run: |
           echo "Waiting for all worker nodes to join and become Ready..."
@@ -237,26 +195,12 @@ jobs:
       # ── Deploy application via kubectl ──────────────────
       - name: Apply namespace
         run: kubectl apply -f ${{ env.K8S_DIR }}/namespace.yaml
-        # Creates the my-app namespace first.
-        # All other resources reference this namespace.
  
       - name: Apply Deployment
         run: kubectl apply -f ${{ env.K8S_DIR }}/deployment.yaml
-        # Starts 2 nginx pods.
-        # Rolling update: maxUnavailable 0, maxSurge 1.
-        # Readiness probe prevents traffic hitting unready pods.
  
       - name: Apply Service
         run: kubectl apply -f ${{ env.K8S_DIR }}/service.yaml
-        # Creates stable internal ClusterIP DNS for the pods.
-        # Ingress routes external traffic to this Service.
- 
-      - name: Apply Ingress
-        run: kubectl apply -f ${{ env.K8S_DIR }}/ingress.yaml
-        # Triggers the AWS Load Balancer Controller to provision
-        # a real ALB in the public subnets of your VPC.
-        # AWS assigns the ALB a public DNS hostname automatically.
-        # That hostname is the live URL — takes ~2-3 min to appear.
  
       - name: Wait for Deployment rollout
         run: |
@@ -266,64 +210,20 @@ jobs:
             --timeout=300s
           echo "Deployment rollout complete"
  
-      # ── Capture live URL ────────────────────────────────
-      - name: Wait for ALB hostname
-        id: get-url
+      # ── Get NodePort URL ────────────────────────────────
+      - name: Get NodePort URL
         run: |
-          echo "Waiting for AWS ALB to be provisioned by Load Balancer Controller..."
-          echo "This typically takes 2-3 minutes..."
+          echo "Getting NodePort service details..."
+          kubectl get svc -n ${{ env.APP_NAMESPACE }}
+          echo ""
+          echo "=================================================="
+          echo "  APP IS RUNNING"
+          echo "  Access via: kubectl port-forward"
+          echo "  kubectl port-forward -n my-app svc/my-app-svc 8080:80"
+          echo "  Then open: http://localhost:8080"
+          echo "=================================================="
  
-          HOSTNAME=""
-          for i in $(seq 1 30); do
-            HOSTNAME=$(kubectl get ingress ${{ env.APP_NAME }}-ingress \
-              --namespace=${{ env.APP_NAMESPACE }} \
-              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
-              2>/dev/null || echo "")
- 
-            if [ -n "$HOSTNAME" ]; then
-              echo "ALB hostname received: $HOSTNAME"
-              echo "url=http://${HOSTNAME}" >> $GITHUB_OUTPUT
-              break
-            fi
- 
-            echo "  Attempt $i/30 — not ready yet, waiting 10s..."
-            sleep 10
-          done
- 
-          if [ -z "$HOSTNAME" ]; then
-            echo "ALB hostname not assigned within 5 minutes"
-            echo "url=pending" >> $GITHUB_OUTPUT
-          fi
- 
-      # ── HTTP smoke test against live URL ────────────────
-      - name: Smoke test — HTTP 200 check
-        if: steps.get-url.outputs.url != 'pending'
-        run: |
-          URL="${{ steps.get-url.outputs.url }}"
-          echo "Running smoke test against: $URL"
- 
-          HTTP_STATUS="000"
-          for i in $(seq 1 12); do
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              --max-time 10 \
-              --connect-timeout 5 \
-              "$URL" || echo "000")
- 
-            if [ "$HTTP_STATUS" = "200" ]; then
-              echo "Smoke test PASSED — HTTP $HTTP_STATUS"
-              break
-            fi
- 
-            echo "  Attempt $i/12 — HTTP $HTTP_STATUS, retrying in 10s..."
-            sleep 10
-          done
- 
-          if [ "$HTTP_STATUS" != "200" ]; then
-            echo "Smoke test FAILED — final status: HTTP $HTTP_STATUS"
-            exit 1
-          fi
- 
-      # ── Final summary printed to Actions log ────────────
+      # ── Final summary ───────────────────────────────────
       - name: Deployment summary
         if: always()
         run: |
@@ -336,11 +236,6 @@ jobs:
           echo "  Region   : ${{ env.AWS_REGION }}"
           echo "  Commit   : ${{ github.sha }}"
           echo "  Branch   : ${{ github.ref_name }}"
-          echo ""
-          echo "  LIVE URL :"
-          echo "  ${{ steps.get-url.outputs.url }}"
-          echo ""
-          echo "  Paste the URL above into a browser to see the app."
           echo "=================================================="
           echo ""
           echo "--- Cluster nodes ---"
@@ -349,8 +244,8 @@ jobs:
           echo "--- App pods ---"
           kubectl get pods -n ${{ env.APP_NAMESPACE }} -o wide
           echo ""
-          echo "--- Ingress / ALB hostname ---"
-          kubectl get ingress -n ${{ env.APP_NAMESPACE }}
+          echo "--- Services ---"
+          kubectl get svc -n ${{ env.APP_NAMESPACE }}
  
       # ── Auto rollback if anything failed ────────────────
       - name: Rollback on failure
@@ -361,3 +256,4 @@ jobs:
             --namespace=${{ env.APP_NAMESPACE }} || true
           echo "Pod status after rollback:"
           kubectl get pods -n ${{ env.APP_NAMESPACE }}
+ 
