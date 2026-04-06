@@ -5,7 +5,10 @@ resource "aws_eks_cluster" "cluster" {
   name     = "${var.project_name}-${var.environment}-cluster"
   role_arn = aws_iam_role.cluster_role.arn
   version  = var.k8s_version
-
+  
+   access_config {
+    authentication_mode = "API_AND_CONFIG_MAP"
+  }
   vpc_config {
     subnet_ids = concat(
       var.private_subnet_ids, # nodes live in private subnets
@@ -55,7 +58,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name  = aws_eks_cluster.cluster.name
   addon_name    = "vpc-cni"
-  addon_version = "v1.21.1-eksbuild.7" # Supported version for k8s 1.32
+  addon_version = "v1.21.1-eksbuild.7" 
   depends_on    = [time_sleep.wait_for_cluster]
   tags = {
     Environment = var.environment
@@ -64,7 +67,7 @@ resource "aws_eks_addon" "vpc_cni" {
 resource "aws_eks_addon" "kube_proxy" {
   cluster_name  = aws_eks_cluster.cluster.name
   addon_name    = "kube-proxy"
-  addon_version = "v1.35.3-eksbuild.2"
+  addon_version = "v1.32.13-eksbuild.5"
   depends_on    = [time_sleep.wait_for_cluster, aws_eks_addon.vpc_cni]
   tags = {
     Environment = var.environment
@@ -74,7 +77,7 @@ resource "aws_eks_addon" "kube_proxy" {
 resource "aws_eks_addon" "coredns" {
   cluster_name  = aws_eks_cluster.cluster.name
   addon_name    = "coredns"
-  addon_version = "v1.11.4-eksbuild.2" # Supported version for k8s 1.32
+  addon_version = "v1.11.4-eksbuild.33" 
   depends_on    = [time_sleep.wait_for_cluster, aws_eks_addon.vpc_cni, aws_autoscaling_group.nodes_asg]
   tags = {
     Environment = var.environment
@@ -85,7 +88,7 @@ resource "aws_eks_addon" "coredns" {
 resource "aws_eks_addon" "ebs_csi" {
   cluster_name             = aws_eks_cluster.cluster.name
   addon_name               = "aws-ebs-csi-driver"
-  addon_version            = "v1.51.1-eksbuild.1" # Supported version for k8s 1.32
+  addon_version            = "v1.57.1-eksbuild.1" 
   service_account_role_arn = aws_iam_role.ebs_csi_role.arn
   depends_on = [time_sleep.wait_for_cluster,
     aws_eks_addon.vpc_cni,
