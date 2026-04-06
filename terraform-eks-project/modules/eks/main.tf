@@ -85,17 +85,17 @@ resource "aws_eks_addon" "coredns" {
 }
 
 
-resource "aws_eks_addon" "ebs_csi" {
-  cluster_name             = aws_eks_cluster.cluster.name
-  addon_name               = "aws-ebs-csi-driver"
-  addon_version            = "v1.57.1-eksbuild.1"
-  service_account_role_arn = aws_iam_role.ebs_csi_role.arn
-  depends_on = [time_sleep.wait_for_cluster,
-    aws_eks_addon.vpc_cni,
-    aws_autoscaling_group.nodes_asg,
-    aws_iam_openid_connect_provider.eks,
-  aws_iam_role_policy_attachment.ebs_csi_policy]
-  tags = {
-    Environment = var.environment
-  }
-}
+# resource "aws_eks_addon" "ebs_csi" {
+#   cluster_name             = aws_eks_cluster.cluster.name
+#   addon_name               = "aws-ebs-csi-driver"
+#   addon_version            = "v1.57.1-eksbuild.1"
+#   service_account_role_arn = aws_iam_role.ebs_csi_role.arn
+#   depends_on = [time_sleep.wait_for_cluster,
+#     aws_eks_addon.vpc_cni,
+#     aws_autoscaling_group.nodes_asg,
+#     aws_iam_openid_connect_provider.eks,
+#   aws_iam_role_policy_attachment.ebs_csi_policy]
+#   tags = {
+#     Environment = var.environment
+#   }
+# }
