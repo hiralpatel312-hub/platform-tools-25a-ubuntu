@@ -1,18 +1,4 @@
 apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: my-app-sa
-  namespace: my-app
-  annotations:
-    eks.amazonaws.com/role-arn: "arn:aws:iam::383585068161:role/eks-cluster-dev-ebs-csi-role"
-    # Replace this ARN with the IRSA role ARN from Terraform output:
-    # terraform output -raw    (add an app-specific IRSA role to the eks module)
-    # This annotation is what maps the ServiceAccount to an IAM role.
-    # Without it the pod uses the node's broad instance role instead
-    # of a scoped per-pod role — that is the IRSA anti-pattern.
-
----
-apiVersion: v1
 kind: Service
 metadata:
   name: my-app-svc
@@ -20,14 +6,11 @@ metadata:
   labels:
     app: my-app
 spec:
-  type: ClusterIP
-  # ClusterIP = internal cluster only. External traffic reaches pods
-  # via the Ingress → ALB → this Service.
-  # Never use LoadBalancer type per service — one ALB via Ingress
-  # handles all services and is far cheaper.
+  type: NodePort
   selector:
     app: my-app
   ports:
     - protocol: TCP
       port: 80
       targetPort: 80
+      nodePort: 30080
