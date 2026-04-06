@@ -55,7 +55,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name  = aws_eks_cluster.cluster.name
   addon_name    = "vpc-cni"
-  addon_version = "v1.20.4-eksbuild.1" # Supported version for k8s 1.32
+  addon_version = "v1.21.1-eksbuild.7" # Supported version for k8s 1.32
   depends_on    = [time_sleep.wait_for_cluster]
   tags = {
     Environment = var.environment
@@ -64,7 +64,7 @@ resource "aws_eks_addon" "vpc_cni" {
 resource "aws_eks_addon" "kube_proxy" {
   cluster_name  = aws_eks_cluster.cluster.name
   addon_name    = "kube-proxy"
-  addon_version = "v1.32.9-eksbuild.1" # Supported version for k8s 1.32
+  addon_version = "v1.35.3-eksbuild.2"
   depends_on    = [time_sleep.wait_for_cluster, aws_eks_addon.vpc_cni]
   tags = {
     Environment = var.environment
